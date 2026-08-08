@@ -41,76 +41,8 @@
 </aside>
 
 {% stylesheet %}
-  /* =============================================
-     TOVEE – Announcement Bar
-     ============================================= */
   .announcement-bar {
-    border-block-end: var(--border-bottom-width) solid rgba(0, 0, 0, 0.12);
-    background: #f6f6f8 !important;
-    color: #333333 !important;
-    position: relative;
-    z-index: calc(var(--layer-overlay) + 1);
-  }
-
-  .announcement-bar__slide {
-    background: transparent !important;
-    color: #333333 !important;
-    padding-inline: 16px;
-  }
-
-  .announcement-bar__text {
-    color: #333333 !important;
-    font-family: var(--font-body--family);
-    font-weight: 400;
-    letter-spacing: 0.14em;
-    font-size: 0.72rem;
-    text-transform: uppercase;
-    line-height: 1.4;
-    margin: 0;
-    text-align: center;
-  }
-
-  @media screen and (max-width: 749px) {
-    .announcement-bar__text {
-      font-size: 0.62rem;
-      letter-spacing: 0.1em;
-      padding-inline: 8px;
-    }
-
-    .announcement-bar__text p::before,
-    .announcement-bar__text p::after {
-      margin-inline: 6px;
-    }
-  }
-
-  /* Diamond separators */
-  .announcement-bar__text p::before {
-    content: '◆';
-    font-size: 0.45em;
-    margin-inline-end: 10px;
-    opacity: 0.65;
-    vertical-align: middle;
-  }
-
-  .announcement-bar__text p::after {
-    content: '◆';
-    font-size: 0.45em;
-    margin-inline-start: 10px;
-    opacity: 0.65;
-    vertical-align: middle;
-  }
-
-  .announcement-bar__slider slideshow-arrows {
-    display: none !important;
-  }
-
-  .announcement-bar__slides {
-    display: grid;
-    grid: [stack] auto / [stack] auto;
-    width: 100% !important;
-    max-width: 100% !important;
-    margin-inline: auto;
-    min-height: 20px;
+    border-block-end: var(--border-bottom-width) solid var(--color-border);
   }
 
   .announcement-bar__slider {
@@ -118,11 +50,18 @@
     flex-direction: row;
     align-items: center;
     position: relative;
-    width: 100%;
 
     @media screen and (max-width: 749px) {
       grid-column: 1 / -1;
     }
+  }
+
+  .announcement-bar__slides {
+    display: grid;
+    grid: [stack] auto / [stack] auto;
+    width: calc(100% - var(--button-size) * 2);
+    max-width: 680px;
+    margin-inline: auto;
   }
 
   .announcement-bar__slides > * {
@@ -132,12 +71,48 @@
   .announcement-bar__slide {
     transition: opacity 0.5s ease-in-out, visibility 0.5s ease-in-out;
     content-visibility: visible;
-    place-content: center;
 
     &[aria-hidden='true'] {
       opacity: 0;
       visibility: hidden;
     }
+  }
+
+  .announcement-bar__slider slideshow-arrows {
+    padding: 0;
+    mix-blend-mode: normal;
+  }
+
+  .announcement-bar__slider slideshow-arrows .slideshow-control {
+    color: var(--color-foreground);
+  }
+
+  .announcement-bar__slider .slideshow-control {
+    display: flex;
+    padding: 0;
+    width: var(--button-size);
+    height: var(--button-size);
+    align-items: center;
+    justify-content: center;
+    opacity: 1;
+    animation: none;
+
+    @media screen and (min-width: 750px) {
+      --slideshow-control-offset: calc((var(--button-size) - var(--icon-size-xs)) / 2);
+
+      .section--page-width &.slideshow-control--previous {
+        transform: translateX(var(--slideshow-control-offset));
+      }
+    }
+  }
+
+  .announcement-bar__slider .slideshow-control .svg-wrapper {
+    width: var(--icon-size-xs);
+    height: var(--icon-size-xs);
+  }
+
+  .announcement-bar__slide {
+    place-content: center;
   }
 
   .announcement-bar__text:first-child {
@@ -147,12 +122,6 @@
   .announcement-bar__link {
     position: absolute;
     inset: 0;
-    z-index: 1;
-  }
-
-  .announcement-bar__link:hover + .announcement-bar__text,
-  .announcement-bar__slide:hover .announcement-bar__text {
-    opacity: 0.9;
   }
 {% endstylesheet %}
 

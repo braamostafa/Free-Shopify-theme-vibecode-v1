@@ -11,7 +11,6 @@
   @param {number} [min] - override the minimum quantity (e.g., 0 for quick order list)
   @param {block} [block] - The block object, used for Shopify editor attributes.
   @param {string} [wrapper_class] - Extra class for the wrapper, used to scope block-level CSS variable overrides so surface-level styles (e.g. quick-add modal) can override them.
-  @param {string} [form_id] - Associates the quantity input with an external form via the HTML form attribute.
 {%- enddoc -%}
 
 {% liquid
@@ -39,11 +38,9 @@
   <{{ component_name }}
     class="quantity-selector{% if class %} {{ class }}{% endif %}"
     data-variant-id="{{ variant.id }}"
-    {% if line_index == null and form_id == blank %}
+    {% if line_index == null %}
       {{- block.shopify_attributes -}}
       ref="quantitySelector"
-    {% elsif line_index == null %}
-      {{- block.shopify_attributes -}}
     {% else %}
       ref="quantitySelectors[]"
     {% endif %}
@@ -75,9 +72,6 @@
       ref="quantityInput"
       aria-live="polite"
       aria-label="{{ 'accessibility.quantity' | t }}"
-      {% if form_id != blank %}
-        form="{{ form_id }}"
-      {% endif %}
       {% if line_index %}
         data-cart-line="{{ line_index | plus: 1 }}"
       {% endif %}
@@ -169,6 +163,8 @@
     {%- endif -%}
   {%- endif -%}
 </div>
+
+{% render 'quantity-selector-styles' %}
 
 {% stylesheet %}
   .quantity-selector-wrapper {

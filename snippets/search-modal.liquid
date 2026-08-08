@@ -5,6 +5,7 @@
   @param {string} [class] - Additional CSS classes to apply to the predictive search component.
 {% enddoc %}
 
+{% render 'pills-styles' %}
 {% render 'predictive-search-styles' %}
 
 <script
@@ -81,11 +82,6 @@
               on:keydown="/onSearchKeyDown"
             >
             <input
-              type="hidden"
-              name="filter.p.collection"
-              value=""
-            >
-            <input
               name="options[prefix]"
               type="hidden"
               value="last"
@@ -116,29 +112,6 @@
           </button>
         </div>
 
-        <div class="search-catalog-container">
-          <div class="search-catalog-wrapper">
-            <span class="catalog-label">
-              {%- if request.locale.iso_code == 'ar' -%}الكتالوج:{%- else -%}Catalog:{%- endif -%}
-            </span>
-            <div class="select-dropdown-container">
-              <select
-                class="search-category-select"
-                aria-label="Category"
-                ref="categorySelect"
-                on:change="/onCategoryChange"
-              >
-                <option value="">
-                  {%- if request.locale.iso_code == 'ar' -%}كل التصنيفات{%- else -%}All Categories{%- endif -%}
-                </option>
-                {%- for collection in collections -%}
-                  <option value="{{ collection.handle }}">{{ collection.title }}</option>
-                {%- endfor -%}
-              </select>
-            </div>
-          </div>
-        </div>
-
         <div class="predictive-search-form__content-wrapper">
           <div
             class="predictive-search-form__content"
@@ -167,85 +140,6 @@
 </dialog-component>
 
 {% stylesheet %}
-  .search-catalog-container {
-    padding: var(--padding-xs) var(--padding-lg);
-    background: var(--color-background);
-    border-bottom: 1px solid var(--color-border);
-    display: flex;
-    align-items: center;
-    justify-content: flex-start;
-  }
-  @media screen and (max-width: 749px) {
-    .search-catalog-container {
-      padding: var(--padding-xs) var(--padding-sm);
-    }
-  }
-
-  .search-catalog-wrapper {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    background: rgb(var(--color-foreground-rgb) / 0.04);
-    padding: 6px 16px;
-    border-radius: 99px;
-    font-size: 13px;
-    color: var(--color-foreground);
-    cursor: pointer;
-    border: 1px solid var(--color-border);
-  }
-
-  .catalog-label {
-    font-weight: 700;
-    color: rgb(var(--color-foreground-rgb) / 0.7);
-  }
-
-  .select-dropdown-container {
-    position: relative;
-    display: inline-flex;
-    align-items: center;
-    padding-inline-end: 16px;
-  }
-
-  .search-category-select {
-    border: none !important;
-    background: transparent !important;
-    font-size: 13px !important;
-    font-weight: 600 !important;
-    color: var(--color-foreground) !important;
-    padding: 0 !important;
-    margin: 0 !important;
-    height: auto !important;
-    cursor: pointer !important;
-    outline: none !important;
-    appearance: none !important;
-    -webkit-appearance: none !important;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    overflow: hidden;
-    max-width: 150px;
-  }
-
-  /* Dropdown arrow */
-  .select-dropdown-container::after {
-    content: "";
-    position: absolute;
-    right: 0;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 0;
-    height: 0;
-    border-left: 4px solid transparent;
-    border-right: 4px solid transparent;
-    border-top: 5px solid var(--color-foreground);
-    pointer-events: none;
-    opacity: 0.7;
-  }
-
-  [dir="rtl"] .select-dropdown-container::after {
-    right: auto;
-    left: 0;
-  }
-
   /* Search modal style */
   .search-modal {
     --search-border-radius: var(--style-border-radius-popover);

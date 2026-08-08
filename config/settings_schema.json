@@ -2,7 +2,7 @@
   {
     "name": "theme_info",
     "theme_name": "Horizon",
-    "theme_version": "4.1.1",
+    "theme_version": "4.1.3",
     "theme_author": "Shopify",
     "theme_documentation_url": "https://help.shopify.com/manual/online-store/themes",
     "theme_support_url": "https://support.shopify.com/"
@@ -1528,26 +1528,6 @@
       {
         "type": "header",
         "content": "t:content.cart_features"
-      },
-      {
-        "type": "text",
-        "id": "free_shipping_threshold",
-        "label": "Free shipping threshold",
-        "default": "100",
-        "info": "Enter the amount in your currency (e.g. 100). Leave empty or set to 0 to disable."
-      },
-      {
-        "type": "text",
-        "id": "free_shipping_message",
-        "label": "Free shipping progress message",
-        "default": "You're only [amount] away from free shipping!",
-        "info": "Use [amount] to display the remaining value."
-      },
-      {
-        "type": "text",
-        "id": "free_shipping_success_message",
-        "label": "Free shipping success message",
-        "default": "🎉 You have unlocked free shipping!"
       },
       {
         "type": "checkbox",

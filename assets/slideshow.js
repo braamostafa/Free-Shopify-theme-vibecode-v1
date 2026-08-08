@@ -125,10 +125,6 @@ export class Slideshow extends Component {
   async connectedCallback() {
     super.connectedCallback();
 
-    if (this.autoplay) {
-      this.style.setProperty('--autoplay-duration', `${this.autoplayInterval}ms`);
-    }
-
     // Register with shared viewport observer for lazy scroll enablement.
     // This prevents iOS Safari crashes caused by too many compositor layers.
     SlideshowViewportObserver.getInstance().observe(this);
@@ -348,10 +344,6 @@ export class Slideshow extends Component {
     if (this.#interval) return;
 
     this.paused = false;
-
-    if (interval) {
-      this.style.setProperty('--autoplay-duration', `${interval}ms`);
-    }
 
     this.#interval = setInterval(() => {
       if (this.matches(':hover') || document.hidden) return;

@@ -27,9 +27,12 @@
 
 {% render 'quick-add-styles' %}
 {% render 'quick-add-modal-styles' %}
+{% render 'swatch-styles' %}
+{% render 'quantity-selector-styles' %}
 {% render 'variant-picker-styles' %}
 {% render 'product-badges-styles' %}
 {% render 'resource-list-styles' %}
+{% render 'product-recommendations-styles' %}
 <product-recommendations
   id="product-recommendations-{{ section.id }}"
   class="product-recommendations"
@@ -57,7 +60,6 @@
       section--{{ section.settings.section_width }}
       {% if section.settings.background_color != blank %}color-custom-{{ section.id }}{% endif %}
       section-resource-list
-      tovee-reveal-on-scroll
       spacing-style
       gap-style
     "
@@ -178,9 +180,10 @@
         class="resource-list resource-list--grid"
       >
         {% for i in (1..section.settings.columns) %}
-          <div class="resource-list__item" aria-label="{{ 'accessibility.loading_product_recommendations' | t }}">
-            {% render 'product-card-skeleton' %}
-          </div>
+          <div
+            class="product-recommendations__skeleton-item"
+            aria-label="{{ 'accessibility.loading_product_recommendations' | t }}"
+          ></div>
         {% endfor %}
       </div>
     {%- endif -%}

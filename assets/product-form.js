@@ -1,8 +1,9 @@
 import { Component } from '@theme/component';
-import { fetchConfig, preloadImage, onAnimationEnd, yieldToMainThread } from '@theme/utilities';
+import { fetchConfig, preloadImage, onAnimationEnd, yieldToMainThread, parseIntOrDefault } from '@theme/utilities';
 import { cartPerformance } from '@theme/performance';
 import { morph } from '@theme/morph';
 import { CartLinesUpdateEvent, CartErrorEvent, ProductSelectEvent, StandardEvents } from '@shopify/events';
+import { resolveVariantId } from '@theme/variant-resolution';
 
 // Error message display duration - gives users time to read the message
 const ERROR_MESSAGE_DISPLAY_DURATION = 10000;
@@ -82,6 +83,10 @@ export class AddToCartComponent extends Component {
       }
     }
     if (this.refs.addToCartButton.dataset.puppet !== 'true') {
+      const animationEnabled = this.dataset.addToCartAnimation === 'true';
+      if (animationEnabled && !event.target.closest('.quick-add-modal')) {
+        this.#animateFlyToCart();
+      }
       this.animateAddToCart();
     }
   }
@@ -93,6 +98,32 @@ export class AddToCartComponent extends Component {
 
     preloadImage(image);
   };
+
+  /**
+   * Animates the fly to cart animation.
+   */
+  #animateFlyToCart() {
+    const { addToCartButton } = this.refs;
+    const cartIcon = document.querySelector('.header-actions__cart-icon');
+
+    const image = this.dataset.productVariantMedia;
+
+    if (!cartIcon || !addToCartButton || !image) return;
+
+    const flyToCartElement = /** @type {FlyToCart} */ (document.createElement('fly-to-cart'));
+
+    let flyToCartClass = addToCartButton.classList.contains('quick-add__button')
+      ? 'fly-to-cart--quick'
+      : 'fly-to-cart--main';
+
+    flyToCartElement.classList.add(flyToCartClass);
+    flyToCartElement.style.setProperty('background-image', `url(${image})`);
+    flyToCartElement.style.setProperty('--start-opacity', '0');
+    flyToCartElement.source = addToCartButton;
+    flyToCartElement.destination = cartIcon;
+
+    document.body.appendChild(flyToCartElement);
+  }
 
   /**
    * Animates the add to cart button.
@@ -156,6 +187,19 @@ if (!customElements.get('add-to-cart-component')) {
  * @property {HTMLElement | undefined} quantityLabel - The quantity label element.
  * @property {HTMLElement | undefined} pricePerItem - The price per item component.
  *
+ * @typedef {object} QueuedAddToCartItem
+ * @property {number} quantity - The quantity captured when Add was clicked.
+ * @property {number} generation - The variant-change generation active when Add was clicked.
+ * @property {string | null} intendedVariantId - The selected option's data-variant-id, when present.
+ * @property {Promise<unknown> | null} pendingVariantChange - The server-side section fetch for the clicked selection.
+ * @property {string | null} variantResolutionUrl - A section-rendering URL that resolves the clicked selection.
+ *
+ * @typedef {object} QuantityConstraints
+ * @property {string} min
+ * @property {string | null} max
+ * @property {string} step
+ * @property {string | null} cartQuantity
+ *
  * @extends Component<ProductFormRefs>
  */
 class ProductFormComponent extends Component {
@@ -171,8 +215,19 @@ class ProductFormComponent extends Component {
   /** @type {number} */
   #variantChangeGeneration = 0;
 
-  /** @type {Array<{variantId: string, quantity: number}>} */
+  /**
+   * Adds queued while a variant change is in flight. Each entry captures the selection state and
+   * generation active when Add was clicked, then resolves that selection at drain time.
+   * @type {QueuedAddToCartItem[]}
+   */
   #addToCartQueue = [];
+
+  /**
+   * The in-flight variant-change section fetch promise. The queue drain awaits this before
+   * reading the resolved variant id.
+   * @type {Promise<unknown> | null}
+   */
+  #pendingVariantChange = null;
 
   connectedCallback() {
     super.connectedCallback();
@@ -270,13 +325,7 @@ class ProductFormComponent extends Component {
     event.preventDefault();
 
     if (this.#variantChangeInProgress) {
-      const intendedVariantId = this.#getIntendedVariantId();
-      const quantity = this.#getQuantity();
-
-      if (intendedVariantId) {
-        this.#addToCartQueue.push({ variantId: intendedVariantId, quantity });
-      }
-
+      this.#addToCartQueue.push(this.#createQueuedAddToCartItem());
       this.refs.addToCartButtonContainer?.animateAddToCart?.();
       return;
     }
@@ -284,14 +333,23 @@ class ProductFormComponent extends Component {
     this.#processAddToCart(undefined, undefined, event);
   }
 
-  /** @returns {string | undefined} */
-  #getIntendedVariantId() {
-    return new URL(window.location.href).searchParams.get('variant') || this.refs.variantId?.value || undefined;
-  }
-
   /** @returns {number} */
   #getQuantity() {
     return Number(this.refs.quantitySelector?.getValue?.()) || Number(this.dataset.quantityDefault) || 1;
+  }
+
+  /** @returns {QueuedAddToCartItem} */
+  #createQueuedAddToCartItem() {
+    const picker = this.#getVariantPicker();
+    const selectedOption = picker?.selectedOption;
+
+    return {
+      quantity: this.#getQuantity(),
+      generation: this.#variantChangeGeneration,
+      intendedVariantId: selectedOption?.dataset.variantId ?? null,
+      pendingVariantChange: this.#pendingVariantChange,
+      variantResolutionUrl: picker && selectedOption ? picker.buildRequestUrl(selectedOption) : null,
+    };
   }
 
   /**
@@ -359,12 +417,6 @@ class ProductFormComponent extends Component {
       }
     }
 
-    const formButtons = this.querySelectorAll('button[type="submit"], [ref="addToCartButton"]');
-    for (const btn of formButtons) {
-      btn.disabled = true;
-      btn.classList.add('is-loading');
-    }
-
     const formData = new FormData(form);
 
     if (overrideVariantId) {
@@ -423,13 +475,6 @@ class ProductFormComponent extends Component {
             })
           );
 
-          // Restore buttons
-          const formButtons = this.querySelectorAll('button[type="submit"], [ref="addToCartButton"]');
-          for (const btn of formButtons) {
-            btn.disabled = false;
-            btn.classList.remove('is-loading');
-          }
-
           // Fetch the updated cart to get the actual total quantity for this variant
           this.#refreshCart()
             .then((ajaxCart) =>
@@ -481,19 +526,6 @@ class ProductFormComponent extends Component {
 
           if (!id) throw new Error('Form ID is required');
 
-          // Restore buttons
-          const formButtons = this.querySelectorAll('button[type="submit"], [ref="addToCartButton"]');
-          for (const btn of formButtons) {
-            btn.disabled = false;
-            btn.classList.remove('is-loading');
-          }
-
-          // Automatically open the cart drawer!
-          setTimeout(() => {
-            const drawer = document.querySelector('theme-drawer#cart-drawer');
-            if (drawer?.open) drawer.open();
-          }, 80);
-
           // Add aria-live region to inform screen readers that the item was added
           // Get the added text from any add-to-cart button
           const anyAddToCartButton = allAddToCartContainers[0]?.refs.addToCartButton;
@@ -543,13 +575,6 @@ class ProductFormComponent extends Component {
             code: 'SERVICE_UNAVAILABLE',
           })
         );
-
-        // Restore buttons
-        const formButtons = this.querySelectorAll('button[type="submit"], [ref="addToCartButton"]');
-        for (const btn of formButtons) {
-          btn.disabled = false;
-          btn.classList.remove('is-loading');
-        }
       })
       .finally(() => {
         if (event) {
@@ -563,12 +588,6 @@ class ProductFormComponent extends Component {
     if (items.length === 0) return;
 
     const { addToCartTextError } = this.refs;
-
-    const formButtons = this.querySelectorAll('button[type="submit"], [ref="addToCartButton"]');
-    for (const btn of formButtons) {
-      btn.disabled = true;
-      btn.classList.add('is-loading');
-    }
 
     if (this.#timeout) clearTimeout(this.#timeout);
 
@@ -603,7 +622,7 @@ class ProductFormComponent extends Component {
       sections: cartItemComponentsSectionIds.join(','),
     };
 
-    return fetch(Theme.routes.cart_add_url, {
+    fetch(Theme.routes.cart_add_url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -624,13 +643,6 @@ class ProductFormComponent extends Component {
               },
             })
           );
-
-          // Restore buttons
-          const formButtons = this.querySelectorAll('button[type="submit"], [ref="addToCartButton"]');
-          for (const btn of formButtons) {
-            btn.disabled = false;
-            btn.classList.remove('is-loading');
-          }
 
           this.#refreshCart()
             .then((ajaxCart) =>
@@ -671,19 +683,6 @@ class ProductFormComponent extends Component {
           addToCartTextError.removeAttribute('aria-live');
         }
 
-        // Restore buttons
-        const formButtons = this.querySelectorAll('button[type="submit"], [ref="addToCartButton"]');
-        for (const btn of formButtons) {
-          btn.disabled = false;
-          btn.classList.remove('is-loading');
-        }
-
-        // Automatically open the cart drawer!
-        setTimeout(() => {
-          const drawer = document.querySelector('theme-drawer#cart-drawer');
-          if (drawer?.open) drawer.open();
-        }, 80);
-
         const allAddToCartContainers = /** @type {NodeListOf<AddToCartComponent>} */ (
           this.querySelectorAll('add-to-cart-component')
         );
@@ -720,13 +719,6 @@ class ProductFormComponent extends Component {
             code: 'SERVICE_UNAVAILABLE',
           })
         );
-
-        // Restore buttons
-        const formButtons = this.querySelectorAll('button[type="submit"], [ref="addToCartButton"]');
-        for (const btn of formButtons) {
-          btn.disabled = false;
-          btn.classList.remove('is-loading');
-        }
       });
   }
 
@@ -788,6 +780,9 @@ class ProductFormComponent extends Component {
     // while a newer variant selection is still pending.
     const generation = ++this.#variantChangeGeneration;
     this.#variantChangeInProgress = true;
+    // Hold the in-flight section-fetch promise so the queue drain can await it before reading the
+    // resolved variant id.
+    this.#pendingVariantChange = event.promise;
 
     try {
       const { detail } = await event.promise;
@@ -934,22 +929,191 @@ class ProductFormComponent extends Component {
         this.#variantChangeInProgress = false;
 
         // Drain any queued add-to-cart requests that accumulated during the variant change
-        if (this.#addToCartQueue.length > 0) {
-          const queuedItems = [...this.#addToCartQueue];
-          this.#addToCartQueue = [];
-          this.#processBatchAddToCart(queuedItems);
-        }
+        await this.#drainAddToCartQueue();
       }
     }
   };
 
   /**
-   * Public method to add multiple items to the cart
-   * @param {Array<{variantId: string, quantity: number}>} items
-   * @returns {Promise<any>}
+   * Drains the add-to-cart queue accumulated while a variant change was in flight.
+   *
+   * Each queued add resolves against the selection and generation that were active when Add was
+   * clicked. If no variant resolves, that queued add is aborted so a stale, empty, or maxed
+   * variant id is never sent. The add-to-cart button is already disabled for unavailable
+   * selections in #onProductSelect, so no further UI change is needed.
    */
-  processBatch(items) {
-    return this.#processBatchAddToCart(items);
+  async #drainAddToCartQueue() {
+    if (this.#addToCartQueue.length === 0) return;
+
+    const queuedItems = [...this.#addToCartQueue];
+    this.#addToCartQueue = [];
+
+    /** @type {Array<{variantId: string, quantity: number}>} */
+    const resolvedItems = [];
+    for (const item of queuedItems) {
+      const resolvedItem = await this.#resolveQueuedAddToCartItem(item);
+      if (resolvedItem) {
+        resolvedItems.push(resolvedItem);
+      }
+    }
+
+    this.#processBatchAddToCart(resolvedItems);
+  }
+
+  /**
+   * @param {QueuedAddToCartItem} item
+   * @returns {Promise<{variantId: string, quantity: number} | null>}
+   */
+  async #resolveQueuedAddToCartItem(item) {
+    const { variantId, quantityConstraints } = await this.#resolveQueuedVariant(item);
+    if (!variantId) return null;
+
+    return {
+      variantId,
+      quantity: this.#normalizeQueuedQuantity(item.quantity, quantityConstraints),
+    };
+  }
+
+  /**
+   * @param {QueuedAddToCartItem} item
+   * @returns {Promise<{variantId: string | null, quantityConstraints: QuantityConstraints | null}>}
+   */
+  async #resolveQueuedVariant(item) {
+    /** @type {string | null} */
+    let resolvedVariantId = null;
+    /** @type {boolean | undefined} */
+    let available;
+    /** @type {QuantityConstraints | null} */
+    let quantityConstraints = null;
+
+    if (item.pendingVariantChange) {
+      try {
+        const result = /** @type {{detail?: {resource?: any, html?: Document | Element}}} */ (
+          await item.pendingVariantChange
+        );
+        const resource = result?.detail?.resource;
+        quantityConstraints = this.#getQuantityConstraintsFromHtml(result?.detail?.html);
+        if (resource === null) {
+          available = false;
+        } else if (resource) {
+          resolvedVariantId = resource.id != null ? String(resource.id) : null;
+          available = resource.available !== false;
+        }
+      } catch {
+        const resolvedVariant = await this.#resolveVariantFromUrl(item.variantResolutionUrl).catch(() => ({
+          variantId: null,
+          available: false,
+          quantityConstraints: null,
+        }));
+        resolvedVariantId = resolvedVariant.variantId;
+        available = resolvedVariant.available;
+        quantityConstraints = resolvedVariant.quantityConstraints;
+      }
+    }
+
+    const isLatestGeneration = item.generation === this.#variantChangeGeneration;
+    const variantId = resolveVariantId({
+      resolvedVariantId,
+      intendedVariantId: item.intendedVariantId,
+      hiddenInputValue: isLatestGeneration ? this.#getVariantIdInput() ?? null : null,
+      available: available ?? (isLatestGeneration ? !this.#isAddToCartDisabled() : undefined),
+    });
+
+    return { variantId, quantityConstraints };
+  }
+
+  /**
+   * @param {number} quantity
+   * @param {QuantityConstraints | null} quantityConstraints
+   * @returns {number}
+   */
+  #normalizeQueuedQuantity(quantity, quantityConstraints) {
+    if (!quantityConstraints) return quantity;
+
+    const min = parseIntOrDefault(quantityConstraints.min, 1);
+    const max = parseIntOrDefault(quantityConstraints.max, null);
+    const step = parseIntOrDefault(quantityConstraints.step, 1);
+    const cartQuantity = parseIntOrDefault(quantityConstraints.cartQuantity, 0);
+    const effectiveMax = max === null ? null : Math.max(max - cartQuantity, min);
+
+    let normalizedQuantity = quantity;
+    if ((quantity - min) % step !== 0) {
+      normalizedQuantity = min + Math.floor((quantity - min) / step) * step;
+    }
+
+    return Math.max(min, Math.min(effectiveMax ?? Infinity, normalizedQuantity));
+  }
+
+  /**
+   * @param {Document | Element | null | undefined} html
+   * @returns {QuantityConstraints | null}
+   */
+  #getQuantityConstraintsFromHtml(html) {
+    const quantityInput = /** @type {HTMLInputElement | null} */ (
+      html?.querySelector?.('quantity-selector-component input[ref="quantityInput"]') ?? null
+    );
+    if (!quantityInput) return null;
+
+    return {
+      min: quantityInput.min,
+      max: quantityInput.max || null,
+      step: quantityInput.step,
+      cartQuantity: quantityInput.getAttribute('data-cart-quantity'),
+    };
+  }
+
+  /**
+   * Resolves a queued selection using the server-side section renderer when the original in-flight
+   * request was aborted by a later variant selection.
+   * @param {string | null} variantResolutionUrl
+   * @returns {Promise<{variantId: string | null, available: boolean | undefined, quantityConstraints: QuantityConstraints | null}>}
+   */
+  async #resolveVariantFromUrl(variantResolutionUrl) {
+    if (!variantResolutionUrl) return { variantId: null, available: undefined, quantityConstraints: null };
+
+    const response = await fetch(variantResolutionUrl, { credentials: 'same-origin' });
+    if (!response.ok) return { variantId: null, available: false, quantityConstraints: null };
+
+    const html = new DOMParser().parseFromString(await response.text(), 'text/html');
+    const quantityConstraints = this.#getQuantityConstraintsFromHtml(html);
+    const textContent = html.querySelector('variant-picker script[type="application/json"]')?.textContent;
+    if (!textContent) return { variantId: null, available: false, quantityConstraints };
+
+    const resource = JSON.parse(textContent);
+    if (!resource || typeof resource !== 'object') return { variantId: null, available: false, quantityConstraints };
+
+    return {
+      variantId: resource.id != null ? String(resource.id) : null,
+      available: resource.available !== false,
+      quantityConstraints,
+    };
+  }
+
+  /**
+   * @returns {import('@theme/variant-picker').default | null}
+   */
+  #getVariantPicker() {
+    const container = this.closest('product-card') ?? this.closest('dialog') ?? this.closest('.shopify-section');
+    const pickers = /** @type {import('@theme/variant-picker').default[]} */ (
+      Array.from(container?.querySelectorAll('variant-picker, swatches-variant-picker-component') ?? [])
+    );
+    const productId = this.dataset.productId;
+
+    if (productId) {
+      const matchingPicker = pickers.find((picker) => picker.dataset.productId === productId);
+      if (matchingPicker) return matchingPicker;
+    }
+
+    return pickers.length === 1 ? pickers[0] ?? null : null;
+  }
+
+  /**
+   * Whether the current selection's add-to-cart button is disabled (unavailable selection).
+   * @returns {boolean}
+   */
+  #isAddToCartDisabled() {
+    const containers = /** @type {NodeListOf<AddToCartComponent>} */ (this.querySelectorAll('add-to-cart-component'));
+    return Array.from(containers).some((container) => container.refs.addToCartButton?.disabled);
   }
 }
 

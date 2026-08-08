@@ -56,7 +56,6 @@
     {% render 'border-override', settings: block_settings %}
     --horizontal-alignment: {{ block_settings.horizontal_alignment }};
     --vertical-alignment: {{ block_settings.vertical_alignment }};
-    --background-overlay-color: {{ block_settings.overlay_color }};
     --gap: {{ block_settings.collection_card_gap }}px;
   "
   {{- block.shopify_attributes -}}
@@ -85,16 +84,6 @@
     position: relative;
     height: 100%;
     flex: 1 1 var(--card-width-small);
-    border-radius: 16px;
-    overflow: hidden;
-    background: var(--color-background, #fff);
-    box-shadow: 0 4px 20px rgba(0,0,0,0.06);
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-  }
-
-  .collection-card:hover {
-    transform: translateY(-6px);
-    box-shadow: 0 16px 40px rgba(0,0,0,0.12);
   }
 
   .collection-card > svg {
@@ -110,8 +99,9 @@
   .collection-card__link {
     position: absolute;
     inset: 0;
+
+    /* allows focus outline to have radius in supported browsers */
     border-radius: var(--border-radius);
-    z-index: 2;
   }
 
   .collection-card__inner {
@@ -144,26 +134,10 @@
     width: 100%;
     max-width: 100%;
     gap: var(--gap);
-    justify-content: center;
-    align-items: center;
-    text-align: center;
-    padding: 12px 8px;
-  }
-
-  /* Image area */
-  .collection-card__image .resource-image__image {
-    object-fit: cover;
-    width: 100%;
-    height: 100%;
-    max-width: 100%;
-    transition: transform 0.5s ease;
-  }
-
-  .collection-card:hover .collection-card__image .resource-image__image {
-    transform: scale(1.04);
   }
 
   /* Nested image block rules */
+
   .collection-card.collection-card--image-bg {
     aspect-ratio: var(--ratio);
   }
@@ -176,6 +150,7 @@
     height: 100%;
   }
 
+  /* Bento layout rules */
   .collection-card--image-height-fixed .collection-card__image {
     height: var(--fixed-card-height);
     width: 100%;
@@ -184,6 +159,13 @@
   .collection-card--image-height-fixed.collection-card--image-bg {
     height: var(--fixed-card-height);
     aspect-ratio: unset;
+  }
+
+  .collection-card__image .resource-image__image {
+    object-fit: cover;
+    width: 100%;
+    height: 100%;
+    max-width: 100%;
   }
 
   .collection-card--image-bg .collection-card__image {
@@ -221,13 +203,6 @@
     &.collection-card.collection-card--image-bg,
     &.collection-card .placeholder-svg {
       aspect-ratio: 99;
-    }
-  }
-
-  /* Mobile: single column, full width */
-  @media screen and (max-width: 749px) {
-    .collection-card {
-      border-radius: 12px;
     }
   }
 {% endstylesheet %}

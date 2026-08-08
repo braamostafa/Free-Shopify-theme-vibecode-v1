@@ -57,9 +57,11 @@ class PredictiveSearchComponent extends Component {
       this.addEventListener('click', this.#handleModalClick, { signal });
     }
 
-    requestIdleCallback(() => {
-      this.#loadEmptyState();
-    });
+    if (RecentlyViewed.getProducts().length > 0) {
+      requestIdleCallback(() => {
+        this.#loadEmptyState();
+      });
+    }
   }
 
   /**
@@ -104,7 +106,7 @@ class PredictiveSearchComponent extends Component {
   };
 
   #handleDialogOpen = () => {
-    if (!this.#emptyStateLoaded) {
+    if (!this.#emptyStateLoaded && RecentlyViewed.getProducts().length > 0) {
       this.#loadEmptyState();
     }
   };
@@ -309,29 +311,11 @@ class PredictiveSearchComponent extends Component {
    * Fetch search results using the section renderer and update the results container.
    * @param {string} searchTerm - The term to search for
    */
-  onCategoryChange = (event) => {
-    const categorySelect = this.querySelector('.search-category-select');
-    const categoryHandle = categorySelect ? categorySelect.value : '';
-    const hiddenInput = this.querySelector('input[name="filter.p.collection"]');
-    if (hiddenInput) {
-      hiddenInput.value = categoryHandle;
-    }
-    const searchTerm = this.refs.searchInput.value.trim();
-    if (searchTerm.length > 0) {
-      this.#getSearchResults(searchTerm);
-    }
-  };
-
   async #getSearchResults(searchTerm) {
     if (!this.dataset.sectionId) return;
 
     const url = new URL(Theme.routes.predictive_search_url, location.origin);
-    const categorySelect = this.querySelector('.search-category-select');
-    const categoryHandle = categorySelect ? categorySelect.value : '';
     url.searchParams.set('q', searchTerm);
-    if (categoryHandle) {
-      url.searchParams.set('filter.p.collection', categoryHandle);
-    }
     url.searchParams.set('resources[limit_scope]', 'each');
 
     const { predictiveSearchResults } = this.refs;
@@ -433,6 +417,29 @@ class PredictiveSearchComponent extends Component {
       .querySelector('.predictive-search-empty-section');
 
     if (!parsedEmptySectionMarkup) throw new Error('No empty section markup found');
+
+    /** This needs to be awaited and not .then so the DOM is already morphed
+     * when #closeResults is called and therefore the height is animated */
+    const viewedProducts = RecentlyViewed.getProducts();
+
+    if (viewedProducts.length > 0) {
+      const recentlyViewedMarkup = await this.#getRecentlyViewedProductsMarkup();
+      if (!recentlyViewedMarkup) return;
+
+      const parsedRecentlyViewedMarkup = new DOMParser().parseFromString(recentlyViewedMarkup, 'text/html');
+      const recentlyViewedProductsHtml = parsedRecentlyViewedMarkup.getElementById('predictive-search-products');
+      if (!recentlyViewedProductsHtml) return;
+
+      for (const child of recentlyViewedProductsHtml.children) {
+        if (child instanceof HTMLElement) {
+          child.setAttribute('ref', 'recentlyViewedWrapper');
+        }
+      }
+
+      const collectionElement = parsedEmptySectionMarkup.querySelector('#predictive-search-products');
+      if (!collectionElement) return;
+      collectionElement.prepend(...recentlyViewedProductsHtml.children);
+    }
 
     if (abortController.signal.aborted) return;
 

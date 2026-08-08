@@ -169,8 +169,8 @@
     --color-background-rgb: {{ settings.page_background_color.rgb }};
     --color-foreground: {{ settings.page_text_color }};
     --color-foreground-rgb: {{ settings.page_text_color.rgb }};
-    --color-border: {{ settings.color_palette.color2 }};
-    --color-border-rgb: {{ settings.color_palette.color2.rgb }};
+    --color-border: {{ settings.page_text_color }};
+    --color-border-rgb: {{ settings.page_text_color.rgb }};
     --palette-lightest: {{ palette_lightest }};
     --palette-lightest-rgb: {{ palette_lightest.rgb }};
     --palette-darkest: {{ palette_darkest }};
@@ -208,6 +208,7 @@
     --color-selected-variant-background: rgb({{ settings.palette_selected_variant_background.rgba }});
     --color-selected-variant-border: rgb({{ settings.palette_selected_variant_border.rgba }});
     --color-selected-variant-text: rgb({{ settings.palette_selected_variant_text.rgba }});
+    --color-selected-variant-text-rgb: {{ settings.palette_selected_variant_text.rgb }};
     --color-selected-variant-hover-background: {{ effective_selected_variant_hover_background }};
     --color-selected-variant-hover-text: rgb({{ effective_selected_variant_hover_text.rgba }});
     --color-selected-variant-hover-border: {{ effective_selected_variant_hover_border }};

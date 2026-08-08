@@ -14,13 +14,9 @@
 >
   <span class="footer-utilities__text">
     &copy; {{ 'now' | date: '%Y' }}
-    {%- if block_settings.custom_copyright_owner != blank -%}
-      {{ block_settings.custom_copyright_owner }}
-    {%- else -%}
-      {{ shop.name | link_to: routes.root_url }}
-    {%- endif -%}
+    {{ shop.name | link_to: routes.root_url -}}
     {%- if block_settings.show_powered_by -%}
-      | {{ block_settings.custom_attribution | default: 'by tovee' }}
+      , {{ powered_by_link }}
     {%- endif -%}
   </span>
 </div>

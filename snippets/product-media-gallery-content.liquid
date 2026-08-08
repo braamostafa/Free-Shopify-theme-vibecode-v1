@@ -445,276 +445,50 @@
     %}
 
     {% if media_presentation == 'grid' %}
-      {% if sorted_media.size > 1 %}
-        {%- comment -%} Thumbnail Gallery Mode: Main image + thumbnails below {%- endcomment -%}
-        <div class="thumbnail-gallery" data-thumbnail-gallery>
-          {%- comment -%} Main/Featured Image Container {%- endcomment -%}
-          <div 
-            class="thumbnail-gallery__main {{ product_media_container_class }}"
-            data-main-image-container
-            style="--media-radius: {{ block_settings.media_radius }}px;"
+      <ul
+        class="media-gallery__grid list-unstyled"
+        data-testid="media-gallery-grid"
+      >
+        {% for media in sorted_media %}
+          <li
+            ref="media[]"
+            class="{{ product_media_container_class }} product-media-container--{{ media.media_type }} {% unless block_settings.aspect_ratio == 'adapt' %}product-media-container--force-aspect{% endunless %}"
+            style="{% if block_settings.aspect_ratio == 'adapt' %} --media-preview-ratio: {{ media.preview_image.aspect_ratio | default: 1.0 }};{% endif %} --media-radius: {{ block_settings.media_radius }}px;"
+            {% if settings.transition_to_main_product and forloop.first %}
+              data-view-transition-type="product-image-transition"
+            {% endif %}
+            {% if media.presentation.focal_point != blank %}
+              data-focal-point="{{ media.presentation.focal_point }}"
+            {% endif %}
           >
-            {%- comment -%} Store all media HTML as hidden elements {%- endcomment -%}
-            {% for media in sorted_media %}
-              {%- liquid
-                if needs_both_sizes and forloop.first
-                  assign media_sizes = sizes_single
-                else
-                  assign media_sizes = sizes
-                endif
-              -%}
-              <div 
-                class="thumbnail-gallery__main-image-wrapper {% unless forloop.first %}thumbnail-gallery__main-image-wrapper--hidden{% endunless %}"
-                data-main-image
-                data-media-index="{{ forloop.index0 }}"
-              >
-                {% if block_settings.aspect_ratio != 'adapt' and block_settings.constrain_to_viewport %}
-                  <div class="product-media-constraint-wrapper">
-                    {%- render 'product-media', media: media, sizes: media_sizes, is_main_product_media: forloop.first -%}
-                  </div>
-                {% else %}
-                  {%- render 'product-media', media: media, sizes: media_sizes, is_main_product_media: forloop.first -%}
-                {% endif %}
-              </div>
-            {% endfor %}
-          </div>
-
-          {%- comment -%} Thumbnails Container {%- endcomment -%}
-          <div class="thumbnail-gallery__thumbnails" data-thumbnails-container>
-            {% for media in sorted_media %}
+            {%- if block_settings.zoom and media.media_type == 'image' -%}
               <button
                 type="button"
-                class="thumbnail-gallery__thumbnail {% if forloop.first %}thumbnail-gallery__thumbnail--active{% endif %}"
-                data-thumbnail
-                data-media-index="{{ forloop.index0 }}"
-                aria-label="{{ 'accessibility.scroll_to' | t: title: media.alt | default: media.media_type }}"
-                style="--media-radius: {{ block_settings.media_radius }}px;"
-              >
-                {% liquid
-                  assign focal_point_style = ''
-                  if media.presentation.focal_point != blank
-                    assign focal_point_style = 'object-position: ' | append: media.presentation.focal_point | append: ';'
-                  endif
-                %}
-                {{
-                  media.preview_image
-                  | image_url: width: 200
-                  | image_tag:
-                    loading: 'lazy',
-                    sizes: '100px',
-                    widths: '100, 200',
-                    alt: media.alt,
-                    style: focal_point_style
-                }}
-              </button>
-            {% endfor %}
-          </div>
-        </div>
-
-        {%- comment -%} JavaScript for thumbnail switching with fade + spring swipe {%- endcomment -%}
-        <script>
-          (function() {
-            const gallery = document.querySelector('[data-thumbnail-gallery]');
-            if (!gallery) return;
-
-            const mainContainer = gallery.querySelector('[data-main-image-container]');
-            const thumbnailBtns = gallery.querySelectorAll('[data-thumbnail]');
-            const allMainImages = mainContainer.querySelectorAll('[data-main-image]');
-            let currentIndex = 0;
-            let isAnimating = false;
-
-            // ── Fade transition ──────────────────────────────────────────
-            function goToIndex(index, direction) {
-              if (isAnimating || index === currentIndex) return;
-              isAnimating = true;
-
-              const prev = mainContainer.querySelector(`[data-main-image][data-media-index="${currentIndex}"]`);
-              const next = mainContainer.querySelector(`[data-main-image][data-media-index="${index}"]`);
-
-              // Sync thumbnail active state
-              thumbnailBtns.forEach(t => t.classList.remove('thumbnail-gallery__thumbnail--active'));
-              const activeThumb = gallery.querySelector(`[data-thumbnail][data-media-index="${index}"]`);
-              if (activeThumb) {
-                activeThumb.classList.add('thumbnail-gallery__thumbnail--active');
-                activeThumb.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-              }
-
-              if (prev) prev.classList.add('thumbnail-gallery__main-image-wrapper--fading-out');
-
-              if (next) {
-                next.style.opacity = '0';
-                next.classList.remove('thumbnail-gallery__main-image-wrapper--hidden');
-                // Trigger reflow
-                next.getBoundingClientRect();
-                next.style.transition = 'opacity 0.35s ease';
-                next.style.opacity = '1';
-              }
-
-              setTimeout(() => {
-                if (prev) {
-                  prev.classList.add('thumbnail-gallery__main-image-wrapper--hidden');
-                  prev.classList.remove('thumbnail-gallery__main-image-wrapper--fading-out');
-                  prev.style.opacity = '';
-                  prev.style.transition = '';
-                }
-                if (next) {
-                  next.style.transition = '';
-                }
-                currentIndex = index;
-                isAnimating = false;
-              }, 370);
-            }
-
-            // ── Thumbnail click ──────────────────────────────────────────
-            thumbnailBtns.forEach(thumbnail => {
-              thumbnail.addEventListener('click', function() {
-                goToIndex(parseInt(this.dataset.mediaIndex));
-              });
-            });
-
-            // ── Keyboard navigation ──────────────────────────────────────
-            gallery.addEventListener('keydown', (e) => {
-              const total = allMainImages.length;
-              if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
-                e.preventDefault();
-                goToIndex((currentIndex + 1) % total);
-              } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
-                e.preventDefault();
-                goToIndex((currentIndex - 1 + total) % total);
-              }
-            });
-
-            // ── Touch / Spring swipe ─────────────────────────────────────
-            let touchStartX = 0;
-            let touchStartY = 0;
-            let touchStartTime = 0;
-            let isDragging = false;
-            let dragOffsetX = 0;
-            const SWIPE_THRESHOLD = 40;    // px
-            const SPRING_STIFFNESS = 0.18; // 0-1  (lower = bouncier)
-
-            function applySpringTransform(el, offset) {
-              if (!el) return;
-              el.style.transition = 'none';
-              el.style.transform = `translateX(${offset}px)`;
-            }
-
-            function springSettleBack(el) {
-              if (!el) return;
-              el.style.transition = 'transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1)';
-              el.style.transform = 'translateX(0)';
-              el.addEventListener('transitionend', () => {
-                el.style.transition = '';
-                el.style.transform = '';
-              }, { once: true });
-            }
-
-            mainContainer.addEventListener('touchstart', (e) => {
-              touchStartX = e.touches[0].clientX;
-              touchStartY = e.touches[0].clientY;
-              touchStartTime = Date.now();
-              isDragging = true;
-              dragOffsetX = 0;
-            }, { passive: true });
-
-            mainContainer.addEventListener('touchmove', (e) => {
-              if (!isDragging) return;
-              const dx = e.touches[0].clientX - touchStartX;
-              const dy = e.touches[0].clientY - touchStartY;
-
-              // If vertical scroll is dominant, cancel drag
-              if (!dragOffsetX && Math.abs(dy) > Math.abs(dx)) {
-                isDragging = false;
-                return;
-              }
-              e.preventDefault();
-
-              // Apply rubber-band resistance at edges
-              const total = allMainImages.length;
-              const isEdge = (currentIndex === 0 && dx > 0) || (currentIndex === total - 1 && dx < 0);
-              dragOffsetX = isEdge ? dx * 0.25 : dx;
-
-              const currentImg = mainContainer.querySelector(`[data-main-image][data-media-index="${currentIndex}"]`);
-              applySpringTransform(currentImg, dragOffsetX);
-            }, { passive: false });
-
-            mainContainer.addEventListener('touchend', (e) => {
-              if (!isDragging) return;
-              isDragging = false;
-
-              const dt = Date.now() - touchStartTime;
-              const velocity = dragOffsetX / dt; // px/ms
-              const total = allMainImages.length;
-              const currentImg = mainContainer.querySelector(`[data-main-image][data-media-index="${currentIndex}"]`);
-
-              const shouldSwipe =
-                Math.abs(dragOffsetX) > SWIPE_THRESHOLD || Math.abs(velocity) > 0.4;
-
-              if (shouldSwipe) {
-                if (dragOffsetX < 0 && currentIndex < total - 1) {
-                  // Swipe left → next image
-                  if (currentImg) {
-                    currentImg.style.transition = 'transform 0.3s cubic-bezier(0.25, 1, 0.5, 1)';
-                    currentImg.style.transform = `translateX(${-mainContainer.offsetWidth}px)`;
-                    currentImg.addEventListener('transitionend', () => {
-                      currentImg.style.transition = '';
-                      currentImg.style.transform = '';
-                    }, { once: true });
-                  }
-                  goToIndex(currentIndex + 1);
-                } else if (dragOffsetX > 0 && currentIndex > 0) {
-                  // Swipe right → prev image
-                  if (currentImg) {
-                    currentImg.style.transition = 'transform 0.3s cubic-bezier(0.25, 1, 0.5, 1)';
-                    currentImg.style.transform = `translateX(${mainContainer.offsetWidth}px)`;
-                    currentImg.addEventListener('transitionend', () => {
-                      currentImg.style.transition = '';
-                      currentImg.style.transform = '';
-                    }, { once: true });
-                  }
-                  goToIndex(currentIndex - 1);
-                } else {
-                  // Edge — spring back
-                  springSettleBack(currentImg);
-                }
-              } else {
-                // Not enough swipe — spring back
-                springSettleBack(currentImg);
-              }
-            }, { passive: true });
-
-          })();
-        </script>
-      {% else %}
-        {%- comment -%} Single image - show normally {%- endcomment -%}
-        <ul
-          class="media-gallery__grid media-gallery__grid--single list-unstyled"
-          data-testid="media-gallery-grid"
-        >
-          {% for media in sorted_media %}
-            <li
-              ref="media[]"
-              class="{{ product_media_container_class }} product-media-container--{{ media.media_type }} {% unless block_settings.aspect_ratio == 'adapt' %}product-media-container--force-aspect{% endunless %}"
-              style="{% if block_settings.aspect_ratio == 'adapt' %} --media-preview-ratio: {{ media.preview_image.aspect_ratio | default: 1.0 }};{% endif %} --media-radius: {{ block_settings.media_radius }}px;"
-            >
-              {%- liquid
-                if needs_both_sizes and forloop.first
-                  assign media_sizes = sizes_single
-                else
-                  assign media_sizes = sizes
-                endif
-              -%}
-              {% if block_settings.aspect_ratio != 'adapt' and block_settings.constrain_to_viewport %}
-                <div class="product-media-constraint-wrapper">
-                  {%- render 'product-media', media: media, sizes: media_sizes, is_main_product_media: forloop.first -%}
-                </div>
-              {% else %}
+                class="button button-unstyled product-media-container__zoom-button"
+                aria-label="{{ 'actions.zoom_media' | t: index: forloop.index }}"
+                on:click="/zoom/{{ forloop.index0 }}"
+                {% if block_settings.zoom %}
+                  on:pointerenter="/preloadImage/{{ forloop.index0 }}"
+                {% endif %}
+              ></button>
+            {%- endif -%}
+            {%- liquid
+              if needs_both_sizes and forloop.first
+                assign media_sizes = sizes_single
+              else
+                assign media_sizes = sizes
+              endif
+            -%}
+            {% if block_settings.aspect_ratio != 'adapt' and block_settings.constrain_to_viewport %}
+              <div class="product-media-constraint-wrapper">
                 {%- render 'product-media', media: media, sizes: media_sizes, is_main_product_media: forloop.first -%}
-              {% endif %}
-            </li>
-          {% endfor %}
-        </ul>
-      {% endif %}
+              </div>
+            {% else %}
+              {%- render 'product-media', media: media, sizes: media_sizes, is_main_product_media: forloop.first -%}
+            {% endif %}
+          </li>
+        {% endfor %}
+      </ul>
     {% endif %}
 
     {%- if block_settings.zoom -%}
@@ -863,6 +637,7 @@
   </media-gallery>
 {% endif %}
 
+{% render 'product-media-container-styles' %}
 {% render 'product-media-gallery-content-styles' %}
 
 {% stylesheet %}

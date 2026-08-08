@@ -7,19 +7,6 @@
     assign product = collections.all.products.first
   endif
 
-  # Fetch the dynamic percentage discount from product metafield or block settings fallback
-  assign discount_percent = nil
-  if product.metafields.custom.pack_discount.value != blank
-    assign discount_percent = product.metafields.custom.pack_discount.value
-  elsif product.metafields.custom.pack_discount != blank
-    assign discount_percent = product.metafields.custom.pack_discount
-  endif
-
-  if discount_percent == blank
-    assign discount_percent = block.settings.fallback_discount | default: block.settings.default_discount_percent | default: 10
-  endif
-  assign discount_percent = discount_percent | plus: 0
-
   assign variant = closest.product.selected_or_first_available_variant
   assign inventory_quantity = variant.inventory_quantity
   assign inventory_policy = variant.inventory_policy
@@ -253,86 +240,6 @@
         {%- endif -%}
       {%- endform -%}
     </product-form-component>
-
-    {%- if block_settings.show_product_links -%}
-      {%- liquid
-        assign refund_dialog_id = 'refund-policy-dialog-' | append: block.id
-        assign contact_url = block_settings.contact_page_url | default: '/pages/contact'
-        assign refund_policy_url = block_settings.refund_policy_url | default: '/policies/refund-policy'
-        assign returns_link_text = block_settings.returns_link_text | default: 'Returns & Exchanges'
-        assign help_link_text = block_settings.help_link_text | default: 'Need help?'
-      -%}
-
-      <script
-        src="{{ 'dialog.js' | asset_url }}"
-        type="module"
-      ></script>
-
-      <dialog-component
-        id="{{ refund_dialog_id }}"
-        class="buy-buttons-block__policy-dialog"
-      >
-        <div class="buy-buttons-block__links">
-          <button
-            type="button"
-            class="button-unstyled buy-buttons-block__link buy-buttons-block__link--policy"
-            on:click="/showDialog"
-          >
-            {{- returns_link_text -}}
-          </button>
-          <span
-            class="buy-buttons-block__links-divider"
-            aria-hidden="true"
-          >
-            ·
-          </span>
-          <a
-            href="{{ contact_url }}"
-            class="buy-buttons-block__link buy-buttons-block__link--help"
-          >
-            {{- help_link_text -}}
-          </a>
-        </div>
-
-        <dialog
-          ref="dialog"
-          class="buy-buttons-block__policy-modal dialog-modal color-custom-popover"
-          scroll-lock
-          aria-labelledby="refund-policy-heading-{{ block.id }}"
-        >
-          <button
-            type="button"
-            ref="closeButton"
-            on:click="/closeDialog"
-            class="button button-unstyled close-button buy-buttons-block__policy-close"
-            aria-label="{{ 'accessibility.close_dialog' | t }}"
-          >
-            {{- 'icon-close.svg' | inline_asset_content -}}
-          </button>
-          <div class="buy-buttons-block__policy-content">
-            <h2
-              id="refund-policy-heading-{{ block.id }}"
-              class="buy-buttons-block__policy-heading h4"
-            >
-              {%- if shop.refund_policy.title != blank -%}
-                {{- shop.refund_policy.title -}}
-              {%- else -%}
-                {{- returns_link_text -}}
-              {%- endif -%}
-            </h2>
-            <div class="buy-buttons-block__policy-body rte">
-              {%- if shop.refund_policy.body != blank -%}
-                {{- shop.refund_policy.body -}}
-              {%- else -%}
-                <p>
-                  <a href="{{ refund_policy_url }}">{{ returns_link_text }}</a>
-                </p>
-              {%- endif -%}
-            </div>
-          </div>
-        </dialog>
-      </dialog-component>
-    {%- endif -%}
   {%- else -%}
     <div class="product-form-buttons">
       <button
@@ -666,42 +573,6 @@
     },
     {
       "type": "header",
-      "content": "Product links"
-    },
-    {
-      "type": "checkbox",
-      "id": "show_product_links",
-      "label": "Show returns and help links",
-      "default": true
-    },
-    {
-      "type": "text",
-      "id": "returns_link_text",
-      "label": "Returns link text",
-      "default": "Returns & Exchanges",
-      "visible_if": "{{ block.settings.show_product_links }}"
-    },
-    {
-      "type": "text",
-      "id": "help_link_text",
-      "label": "Help link text",
-      "default": "Need help?",
-      "visible_if": "{{ block.settings.show_product_links }}"
-    },
-    {
-      "type": "url",
-      "id": "contact_page_url",
-      "label": "Contact page",
-      "visible_if": "{{ block.settings.show_product_links }}"
-    },
-    {
-      "type": "url",
-      "id": "refund_policy_url",
-      "label": "Refund policy fallback URL",
-      "visible_if": "{{ block.settings.show_product_links }}"
-    },
-    {
-      "type": "header",
       "content": "t:content.padding"
     },
     {
@@ -743,26 +614,6 @@
       "step": 1,
       "unit": "px",
       "default": 0
-    },
-    {
-      "type": "range",
-      "id": "fallback_discount",
-      "label": "Fallback Discount Percentage (%)",
-      "min": 1,
-      "max": 99,
-      "step": 1,
-      "default": 10,
-      "info": "Used if the product's metafield 'custom.pack_discount' is not configured."
-    },
-    {
-      "type": "range",
-      "id": "default_discount_percent",
-      "label": "Default Fallback Discount Percentage (%)",
-      "min": 1,
-      "max": 99,
-      "step": 1,
-      "default": 10,
-      "info": "Used if fallback_discount is empty."
     }
   ],
   "presets": [

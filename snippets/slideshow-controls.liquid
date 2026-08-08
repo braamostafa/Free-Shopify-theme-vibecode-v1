@@ -375,8 +375,6 @@
       margin: calc(var(--size) / -2);
       font-size: 0;
       border-radius: calc(var(--size));
-      position: relative;
-      transition: transform 0.3s ease;
 
       &::after {
         content: '';
@@ -386,7 +384,6 @@
         width: var(--size);
         border-radius: calc(var(--size) / 2);
         box-shadow: inset 0 0 0 1.5px hsl(0 0% 0% / 0.15);
-        transition: background-color 0.3s ease, box-shadow 0.3s ease;
 
         @supports not (view-timeline-axis: inline) {
           &[aria-selected='true'] {
@@ -401,43 +398,11 @@
 
       &[aria-selected='true'] {
         --color: var(--color-active);
-        transform: scale(1.3);
 
         &::after {
-          background-color: transparent !important;
-          box-shadow: inset 0 0 0 1.5px var(--color-active) !important;
-        }
-
-        &::before {
-          content: '';
-          position: absolute;
-          display: block;
-          background-color: var(--color-active);
-          height: var(--size);
-          width: var(--size);
-          border-radius: 50%;
-          top: 50%;
-          left: 50%;
-          transform: translate(-50%, -50%);
-          clip-path: inset(0 100% 0 0); /* Start completely empty from left */
-          animation: fill-progress var(--autoplay-duration, 5000ms) linear forwards;
-          z-index: 1;
+          box-shadow: inset 0 0 0 1.5px hsl(0 0% 0% / 0.4);
         }
       }
-    }
-  }
-
-  slideshow-component[paused] .slideshow-controls__dots button::before,
-  slideshow-component:hover .slideshow-controls__dots button::before {
-    animation-play-state: paused !important;
-  }
-
-  @keyframes fill-progress {
-    0% {
-      clip-path: inset(0 100% 0 0);
-    }
-    100% {
-      clip-path: inset(0 0 0 0);
     }
   }
 

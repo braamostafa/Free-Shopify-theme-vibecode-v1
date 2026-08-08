@@ -4,43 +4,18 @@
   if section.settings.background_color != blank
     render 'contrast-override', background_color: section.settings.background_color, section_id: section.id
   endif
-
-  assign hero_image = article.image
-  if hero_image != blank
-    assign hero_image_url = hero_image | image_url: width: 1920
-  endif
 %}
 
 <div
   class="section-background{% if section.settings.background_color != blank %} color-custom-{{ section.id }}{% endif %}"
 ></div>
-
-{%- if hero_image != blank -%}
-  <div
-    class="blog-article-hero"
-    style="background-image: url('{{ hero_image_url }}');"
-  >
-    <div class="blog-article-hero__overlay"></div>
-    <div class="blog-article-hero__inner">
-      <h1 class="blog-article-hero__title">{{ article.title }}</h1>
-    </div>
-  </div>
-{%- else -%}
-  <div class="blog-article-hero blog-article-hero--no-image">
-    <div class="blog-article-hero__inner">
-      <h1 class="blog-article-hero__title">{{ article.title }}</h1>
-    </div>
-  </div>
-{%- endif -%}
-
-<div class="section blog-article{% if section.settings.background_color != blank %} color-custom-{{ section.id }}{% endif %}">
+<div class="section{% if section.settings.background_color != blank %} color-custom-{{ section.id }}{% endif %}">
   <div
     class="
       spacing-style
       layout-panel-flex
       layout-panel-flex--column
       section-content-wrapper
-      blog-article__body
       mobile-column
     "
     style="
@@ -49,8 +24,6 @@
     "
   >
     {% content_for 'blocks' %}
-
-    {% render 'blog-post-share', article: article %}
 
     {% if blog.comments_enabled? %}
       <div class="blog-post-comments-container">
@@ -88,135 +61,10 @@
 </script>
 
 {% stylesheet %}
-  .blog-article-hero {
-    position: relative;
-    width: 100%;
-    min-height: 200px;
-    background-size: cover;
-    background-position: center center;
-    background-repeat: no-repeat;
-    display: flex;
-    align-items: center;
-  }
-
-  .blog-article-hero--no-image {
-    background-color: rgb(var(--color-foreground-rgb) / 0.08);
-  }
-
-  .blog-article-hero__overlay {
-    position: absolute;
-    inset: 0;
-    background: rgb(0 0 0 / 0.45);
-  }
-
-  .blog-article-hero__inner {
-    position: relative;
-    z-index: 1;
-    width: 100%;
-    max-width: 1100px;
-    margin-inline: auto;
-    padding: 2.5rem var(--page-margin);
-  }
-
-  .blog-article-hero__title {
-    margin: 0;
-    max-width: 900px;
-    color: #fff;
-    font-size: clamp(1.125rem, 2.5vw, 1.75rem);
-    font-weight: 600;
-    line-height: 1.35;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-    text-align: start;
-  }
-
-  @media screen and (min-width: 750px) {
-    .blog-article-hero {
-      min-height: 220px;
-    }
-  }
-
-  .blog-article-hero--no-image .blog-article-hero__title {
-    color: var(--color-foreground);
-  }
-
-  .blog-article__body {
-    width: 100%;
-    max-width: 800px;
-    margin-inline: auto;
-    padding-inline: var(--page-margin);
-    text-align: start;
-  }
-
-  .blog-article .blog-post-content {
-    max-width: none;
-    margin: 0;
-    text-align: start;
-  }
-
-  .blog-post-share {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 1rem;
-    margin-block-start: 2.5rem;
-    padding-block-start: 2rem;
-    border-top: 1px solid rgb(var(--color-foreground-rgb) / 0.12);
-  }
-
-  .blog-post-share__label {
-    font-size: 0.875rem;
-    font-weight: 600;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: var(--color-foreground);
-  }
-
-  .blog-post-share__buttons {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-  }
-
-  .blog-post-share__button {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 2.5rem;
-    height: 2.5rem;
-    border-radius: 50%;
-    color: #fff;
-    text-decoration: none;
-    transition: transform 0.2s ease, opacity 0.2s ease;
-  }
-
-  .blog-post-share__button:hover {
-    transform: scale(1.08);
-    opacity: 0.9;
-  }
-
-  .blog-post-share__button svg {
-    width: 1.125rem;
-    height: 1.125rem;
-  }
-
-  .blog-post-share__button--facebook {
-    background-color: #1877f2;
-  }
-
-  .blog-post-share__button--whatsapp {
-    background-color: #25d366;
-  }
-
-  .blog-post-share__button--x {
-    background-color: #000;
-  }
-
   .blog-post-comments-container {
     width: 100%;
-    max-width: none;
-    margin: 0;
-    text-align: start;
+    max-width: var(--normal-content-width);
+    margin: 0 auto;
   }
 
   .blog-post-comments {

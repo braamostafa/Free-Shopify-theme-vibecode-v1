@@ -105,44 +105,68 @@ class StickyAddToCartComponent extends Component {
   }
 
   /**
-   * Sets up the IntersectionObserver to watch the buy buttons visibility.
-   * This is defined as a reusable class method to avoid runtime errors on variant change.
+   * Sets up the IntersectionObserver to watch the buy buttons visibility
    */
   #setupIntersectionObserver() {
     const productForm = this.#getProductForm();
-    if (productForm) {
-      this.#targetAddToCartButton = productForm.querySelector('[ref="addToCartButton"]');
-    }
+    if (!productForm) return;
 
-    this.#buyButtonsIntersectionObserver?.disconnect();
+    const buyButtonsBlock = productForm.closest('.buy-buttons-block');
+    if (!buyButtonsBlock) return;
 
-    if (this.#targetAddToCartButton) {
-      this.#buyButtonsIntersectionObserver = new IntersectionObserver((entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            this.#hideStickyBar();
-          } else {
-            // Check if the button is scrolled past (above the viewport)
-            const isScrolledPast = entry.boundingClientRect.bottom < 0;
-            if (isScrolledPast && window.scrollY > 50) {
-              if (!this.#isChatActive()) {
-                this.#showStickyBar();
-              } else {
-                this.#hideStickyBar();
-              }
-            } else {
-              this.#hideStickyBar();
+    // In themes migrated from 2.0, the footer element doesn't exist
+    const footer = document.querySelector('footer') ?? document.querySelector('[class*="footer-group"]');
+    if (!footer) return;
+
+    // Observer for buy buttons visibility
+    this.#buyButtonsIntersectionObserver = new IntersectionObserver((entries) => {
+      const [entry] = entries;
+      if (!entry) return;
+
+      // Only show sticky bar if buy buttons have been scrolled past (above viewport)
+      if (!entry.isIntersecting && !this.#isStuck) {
+        // Check if the element is above the viewport (scrolled past) or below (not yet reached)
+        const rect = entry.target.getBoundingClientRect();
+        if (rect.bottom < 0 || rect.top < 0) {
+          if (this.#isChatActive()) return;
+          this.#showStickyBar();
+        }
+        // If rect.top >= 0, element is below viewport - don't show sticky bar yet
+      } else if (entry.isIntersecting && this.#isStuck) {
+        this.#hiddenByBottom = false;
+        this.#hideStickyBar();
+      }
+    });
+
+    // Observer for footer visibility - hides sticky bar at page bottom
+    this.#mainBottomObserver = new IntersectionObserver(
+      (entries) => {
+        const [entry] = entries;
+        if (!entry) return;
+
+        if (entry.isIntersecting && this.#isStuck) {
+          this.#hiddenByBottom = true;
+          this.#hideStickyBar();
+        } else if (!entry.isIntersecting && this.#hiddenByBottom) {
+          // Footer out of view - check if we should show sticky bar again
+          const rect = buyButtonsBlock.getBoundingClientRect();
+          // Only show if buy buttons are above the viewport (scrolled past)
+          if (rect.bottom < 0 || rect.top < 0) {
+            this.#hiddenByBottom = false;
+            if (!this.#isChatActive()) {
+              this.#showStickyBar();
             }
           }
-        });
-      }, {
-        root: null,
-        threshold: 0
-      });
-      this.#buyButtonsIntersectionObserver.observe(this.#targetAddToCartButton);
-    } else {
-      this.#hideStickyBar();
-    }
+        }
+      },
+      {
+        rootMargin: '200px 0px 0px 0px',
+      }
+    );
+
+    this.#buyButtonsIntersectionObserver.observe(buyButtonsBlock);
+    this.#mainBottomObserver.observe(footer);
+    this.#targetAddToCartButton = productForm.querySelector('[ref="addToCartButton"]');
   }
 
   // Public action handlers
@@ -159,9 +183,21 @@ class StickyAddToCartComponent extends Component {
       this.refs.addToCartButton.dataset.added = 'true';
     }
 
+    if (!cartIcon || !this.refs.addToCartButton || !this.refs.productImage) return;
     if (this.#resetTimeout) clearTimeout(this.#resetTimeout);
 
-    await onAnimationEnd([this.refs.addToCartButton]);
+    const flyToCartElement = /** @type {FlyToCart} */ (document.createElement('fly-to-cart'));
+    const sourceStyles = getComputedStyle(this.refs.productImage);
+
+    flyToCartElement.classList.add('fly-to-cart--sticky');
+    flyToCartElement.style.setProperty('background-image', `url(${this.refs.productImage.src})`);
+    flyToCartElement.useSourceSize = 'true';
+    flyToCartElement.source = this.refs.productImage;
+    flyToCartElement.destination = cartIcon;
+
+    document.body.appendChild(flyToCartElement);
+
+    await onAnimationEnd([this.refs.addToCartButton, flyToCartElement]);
     this.#resetTimeout = setTimeout(() => {
       this.refs.addToCartButton.removeAttribute('data-added');
     }, 800);
@@ -223,9 +259,6 @@ class StickyAddToCartComponent extends Component {
         }
         // Restore the current quantity display if needed
         this.#updateButtonText();
-
-        // Re-initialize intersection observer for the new variant button
-        this.#setupIntersectionObserver();
       })
       .catch((error) => {
         if (error?.name !== 'AbortError') console.warn('[sticky-add-to-cart] Event promise rejected:', error);
@@ -281,21 +314,6 @@ class StickyAddToCartComponent extends Component {
 
     this.#currentQuantity = event.detail.quantity;
     this.#updateButtonText();
-
-    // Sync all quantity inputs on the product page
-    const sectionElement = this.closest('.shopify-section');
-    if (sectionElement) {
-      const quantityInputs = sectionElement.querySelectorAll('quantity-selector-component input[name="quantity"]');
-      quantityInputs.forEach(input => {
-        if (parseInt(input.value) !== this.#currentQuantity) {
-          input.value = this.#currentQuantity;
-          const component = input.closest('quantity-selector-component');
-          if (component && typeof component.updateButtonStates === 'function') {
-            component.updateButtonStates();
-          }
-        }
-      });
-    }
   };
 
   /**
@@ -320,7 +338,6 @@ class StickyAddToCartComponent extends Component {
   /**
    * Checks whether the Shopify Chat is active on the page.
    * When active, the sticky bar must stay hidden to avoid overlapping the chat UI.
-   * Defined as a private method in the class body.
    *
    * <shopify-chat> is rendered unconditionally by chat-drawer.liquid, but
    * the "Ask anything" button only paints once the Inbox app has installed

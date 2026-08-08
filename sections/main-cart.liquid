@@ -47,12 +47,6 @@
         {%- content_for 'block', id: 'cart-page-title', type: '_cart-title' %}
       </div>
 
-      {%- unless cart.empty? -%}
-        <div class="cart-page__shipping-bar">
-          {% render 'free-shipping-bar' %}
-        </div>
-      {%- endunless -%}
-
       <div class="cart-page__items">
         {%- content_for 'block', id: 'cart-page-items', type: '_cart-products' %}
       </div>
@@ -104,30 +98,14 @@
     padding-top: var(--padding-xl);
   }
 
-  .cart-page__title + .cart-page__items,
-  .cart-page__title + .cart-page__shipping-bar {
+  .cart-page__title + .cart-page__items {
     margin-block-start: var(--margin-lg);
-  }
-
-  .cart-page__shipping-bar {
-    margin-block-end: var(--margin-lg);
-  }
-
-  .cart-page__shipping-bar + .cart-page__items {
-    margin-block-start: 0;
   }
 
   @media screen and (min-width: 750px) {
     .cart-page {
       grid-template-columns: 1fr min(50vw, var(--sidebar-width));
       grid-template-rows: min-content min-content 1fr;
-    }
-
-    .cart-page__title,
-    .cart-page__shipping-bar,
-    .cart-page__items,
-    .cart-page__more-blocks {
-      grid-column: 1;
     }
 
     .cart-page__summary {

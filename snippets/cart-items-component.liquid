@@ -25,10 +25,7 @@
   view-event-payload="{{ cart | standard_event_data: 'view' | escape  }}"
   {% # theme-check-enable UnknownFilter %}
 >
-  {% render 'cart-items-skeleton' %}
-  <div class="cart-items-real-content">
-    {{ children }}
-  </div>
+  {{ children }}
 </cart-items-component>
 
 {% stylesheet %}
@@ -37,20 +34,6 @@
     height: 100%;
     display: flex;
     flex-direction: column;
-    min-height: 0;
-  }
-
-  .cart-items-real-content {
-    width: 100%;
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    min-height: 0;
-  }
-
-  .cart-items-component[data-drawer] .cart-drawer__scroll-wrap {
-    flex: 1;
-    min-height: 0;
   }
 
   @media screen and (prefers-reduced-motion: no-preference) {

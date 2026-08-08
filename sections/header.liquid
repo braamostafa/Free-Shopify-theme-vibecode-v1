@@ -100,7 +100,9 @@
     render 'header-actions', customer_account_menu: section.settings.customer_account_menu, display_style: section.settings.actions_display_style, section: section
   endcapture
 
-  assign search_class = 'search-action--hidden-on-drawer'
+  if shop.customer_accounts_enabled
+    assign search_class = 'search-action--hidden-on-drawer'
+  endif
 
   # Handle localization positioning
   if section.settings.localization_position == 'left'
@@ -219,11 +221,10 @@
     assign localization_font = '--menu-localization-font: var(--font-[localization_font]--family); ' | replace: '[localization_font]', section.settings.localization_font
     assign localization_font_size = '--menu-localization-font-size: [localization_font_size]; ' | replace: '[localization_font_size]', section.settings.localization_font_size
     assign color_shadow = '--color-shadow: rgb(var(--color-foreground-rgb) / var(--opacity-10-25));'
-    assign dropdown_max_height = '20.5rem'
     assign form_style = localization_font | append: localization_font_size | append: color_shadow
   %}
   {% if show_language and show_country == false %}
-    <div class="dropdown-localization">
+    <div class="dropdown-localization mobile:hidden">
       {% render 'localization-form',
         show_country: show_country,
         show_language: show_language,
@@ -234,7 +235,7 @@
     </div>
   {% elsif show_country %}
     <dropdown-localization-component
-      class="dropdown-localization"
+      class="dropdown-localization mobile:hidden"
     >
       <button
         type="button"
@@ -245,39 +246,6 @@
         on:click="/toggleSelector"
         style="{{ localization_font }} {{ localization_font_size }}"
       >
-        <span class="localization-selector__content">
-          <span class="localization-selector__inner">
-            {% if show_country %}
-              {% if section.settings.country_selector_style == true %}
-                <span
-                  class="icon-flag"
-                  style="
-                    background-image: url({{- localization.country | image_url: width: 32 }});
-                    --size-shadow: {{ shadow_size }}px;
-                    --color-shadow: rgb(var(--color-foreground-rgb) / var(--opacity-30-60));
-                  "
-                ></span>
-              {% endif %}
-              <span class="currency-code" data-testid="localization-currency-code">
-                {{- localization.country.currency.iso_code -}}
-              </span>
-            {% endif %}
-
-            {%- if show_country and show_language -%}
-              <span>/</span>
-            {%- endif -%}
-
-            {%- if show_language -%}
-              <span class="language-code" data-testid="localization-language-code">
-                {{ localization.language.iso_code | upcase }}
-              </span>
-            {%- endif -%}
-            <span class="svg-wrapper icon-caret">
-              {{- 'icon-caret.svg' | inline_asset_content -}}
-            </span>
-          </span>
-        </span>
-      </button>
         {% if show_country %}
           {% if section.settings.country_selector_style == true %}
             {% assign localization_background_color = 'background_color_[row]' | replace: '[row]', section.settings.localization_row %}
@@ -336,8 +304,7 @@
           show_language: show_language,
           localization_style: 'dropdown',
           form_style: form_style,
-          form_id: section.id,
-          dropdown_max_height: dropdown_max_height
+          form_id: section.id
         %}
       </div>
     </dropdown-localization-component>
@@ -532,18 +499,9 @@
     display: none;
   }
 
-  @media screen and (max-width: 749px) {
-    #header-component .header__column {
-      display: contents !important;
-    }
-
-    #header-component .header-menu {
-      display: none !important;
-    }
-
-    #header-component .header__drawer,
-    #header-component header-drawer {
-      display: flex !important;
+  @media screen and (min-width: 750px) {
+    #header-component[data-menu-style='menu'] :is(.header-menu, .dropdown-localization) {
+      display: flex;
     }
   }
 
@@ -552,13 +510,8 @@
   }
 
   @media screen and (min-width: 750px) {
-    #header-component[data-menu-style='menu'] .header-menu,
-    #header-component .header-menu {
-      display: flex !important;
-    }
-
-    #header-component .header__drawer {
-      display: none !important;
+    #header-component[data-menu-style='menu'] .header__navigation-bar-row {
+      display: none;
     }
   }
 
@@ -667,22 +620,17 @@
     --full-open-header-height: 0px;
   }
 
-  #header-group:has(#header-component[sticky='always']),
-  #header-group:has(#header-component[sticky='scroll-up'][data-sticky-state='active']) {
+  #header-group:has(#header-component[sticky]) {
+    display: contents;
+  }
+
+  .header-section:has(> #header-component[sticky='always']),
+  .header-section:has(> #header-component[sticky='scroll-up'][data-sticky-state='active']) {
     position: sticky;
 
     /* Use -1 instead of 0 so intersection observer can track sticky state */
     top: -1px;
     z-index: var(--layer-menu-drawer);
-  }
-
-  .header-section:has(> #header-component[sticky='always']),
-  .header-section:has(> #header-component[sticky='scroll-up'][data-sticky-state='active']) {
-    position: static;
-  }
-
-  body:has(#header-group #header-component[data-sticky-state='active']) {
-    --sticky-header-offset: var(--header-group-height);
   }
 
   .header[data-sticky-state] {
@@ -1070,41 +1018,31 @@
     display: flex;
     position: relative;
     align-items: center;
-    gap: 6px;
+    gap: 4px;
     font-family: var(--menu-localization-font);
     font-size: var(--menu-localization-font-size);
     font-weight: var(--menu-top-level-font-weight);
-    padding: 8px 12px;
-    margin-inline: 0;
-    border-radius: 8px;
-    transition: all 0.2s ease;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    border: 1px solid transparent;
-  }
-
-  .dropdown-localization__button:hover {
-    background-color: rgba(0, 0, 0, 0.04);
-    transform: translateY(-1px);
+    padding-inline: var(--padding-2xs);
+    margin-inline: calc(-1 * var(--padding-2xs));
   }
 
   .dropdown-localization__button .svg-wrapper.icon-caret {
-    height: 10px;
-    width: 10px;
+    height: var(--icon-size-xs);
+    width: var(--icon-size-xs);
+    right: var(--margin-xs);
+    top: calc(50% - var(--padding-2xs));
     flex-shrink: 0;
-    transition: transform 0.2s ease;
-    opacity: 0.5;
+    transition: transform var(--animation-speed) var(--animation-easing);
   }
 
   .dropdown-localization__button .icon-flag {
-    width: 20px;
-    height: 20px;
-    clip-path: circle(50%);
+    width: var(--menu-localization-font-size, var(--icon-size-sm));
+    height: var(--menu-localization-font-size, var(--icon-size-sm));
+    clip-path: circle(50%); /* stylelint-disable-line */
     background-position: center;
     background-size: cover;
     margin-inline-end: 4px;
     position: relative;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
   }
 
   .dropdown-localization__button .icon-flag::after {
@@ -1126,43 +1064,20 @@
     border-color: transparent;
   }
 
-  .dropdown-localization__button[aria-expanded='true'] {
-    background-color: rgba(0, 0, 0, 0.04);
-    border-color: rgba(0, 0, 0, 0.06);
-  }
-
-  .localization-selector__content {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    pointer-events: none;
-  }
-
-  .localization-selector__content span {
-    pointer-events: auto;
-  }
-
   dropdown-localization-component .localization-form__list {
-    max-height: var(--dropdown-max-height, 20.5rem);
+    max-height: 20.5rem;
   }
 
   .localization-wrapper {
-    position: absolute;
+    position: fixed;
     z-index: var(--layer-raised);
-    border-radius: 12px;
+    border-radius: var(--style-border-radius-popover);
     transition-property: display, opacity, translate;
-    transition-duration: 0.2s;
-    transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+    transition-duration: 0.3s;
+    transition-timing-function: var(--ease-out-quad);
     transition-behavior: allow-discrete;
-    translate: 0 8px;
+    translate: 0 20px;
     opacity: 0;
-    background: #ffffff;
-    box-shadow: 
-      0 8px 24px rgba(0, 0, 0, 0.12),
-      0 2px 8px rgba(0, 0, 0, 0.06);
-    border: 1px solid rgba(0, 0, 0, 0.08);
-    padding: 4px;
-    overflow: hidden;
   }
 
   .localization-wrapper:not([hidden]) {
@@ -1172,7 +1087,7 @@
 
   @starting-style {
     .localization-wrapper:not([hidden]) {
-      translate: 0 8px;
+      translate: 0 20px;
       opacity: 0;
     }
   }
@@ -1244,7 +1159,7 @@
     visibility: visible;
   }
 
-  .dropdown-localization .language-selector:where(:not(.top-shadow)) {
+  .dropdown-localization .language-selector:where(:not(.language-selector--top-shadow)) {
     font-weight: var(--menu-top-level-font-weight);
   }
 
@@ -1252,378 +1167,6 @@
     font-family: var(--menu-localization-font);
     font-size: var(--menu-localization-font-size);
   }
-
-  /* ── TOVEE: Premium language selector on mobile ─────── */
-  @media screen and (max-width: 749px) {
-
-    /* The select container */
-    #header-component[data-menu-style='drawer'] .header__columns .dropdown-localization,
-    #header-component[data-menu-style='drawer'] .header__columns .language-selector--collapse-space {
-      position: static;
-    }
-
-    /* Sleek inline select button */
-    #header-component[data-menu-style='drawer'] .header__columns .localization-form__select {
-      appearance: none;
-      -webkit-appearance: none;
-      background: transparent;
-      border: none;
-      box-shadow: none;
-      outline: none;
-      font-family: var(--font-body--family);
-      font-size: 0.72rem;
-      font-weight: 600;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      color: var(--color-foreground);
-      padding: 6px 18px 6px 6px;
-      min-height: 44px;
-      cursor: pointer;
-      max-width: 56px;
-    }
-
-    /* Dropdown select - compact and close to button */
-    #header-component[data-menu-style='drawer'] .localization-wrapper {
-      position: fixed;
-      right: 12px;
-      top: calc(var(--header-group-height) + 4px) !important;
-      left: auto !important;
-      width: auto;
-      min-width: 80px;
-      background: #ffffff;
-      border: 1px solid rgba(0, 0, 0, 0.08);
-      border-radius: 8px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-      overflow: hidden;
-      padding: 4px;
-      transform-origin: top right;
-    }
-
-    /* Style each language option row in dropdown panel */
-    #header-component[data-menu-style='drawer'] .localization-wrapper .localization-form__list-item,
-    #header-component[data-menu-style='drawer'] .localization-wrapper .language-selector .localization-form__select option {
-      font-size: 0.75rem;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-      font-weight: 600;
-      padding: 8px 14px;
-    }
-
-    /* Caret icon size on mobile selector */
-    #header-component[data-menu-style='drawer'] .header__columns .language-selector .svg-wrapper.icon-caret svg {
-      width: 8px;
-      height: 8px;
-      stroke-width: 2px;
-    }
-  }
-
-
-  /* =============================================
-     TOVEE – Premium Women's Skincare Header
-     ============================================= */
-
-  /* --- Logo: uppercase, spaced, elegant --- */
-  .header-logo {
-    letter-spacing: 0.22em;
-    text-transform: uppercase;
-    font-weight: 600;
-    font-size: 1.15rem;
-    color: var(--color-foreground);
-    transition: color 0.3s ease;
-  }
-
-  .header-logo:hover {
-    color: var(--color-brand-mahogany);
-    text-decoration: none;
-  }
-
-  /* --- Desktop nav links: Active page indicator + vibrant hover color --- */
-  .menu-list__link {
-    position: relative;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    font-size: 0.88rem;
-    font-weight: 500;
-    color: var(--color-foreground, #1a1a1a);
-    transition: color 0.2s ease, opacity 0.2s ease;
-  }
-
-  /* Clear vibrant lighter hover color suitable for TOVEE skincare */
-  .menu-list__link:hover {
-    color: #a32e46 !important; /* Lighter, vibrant rose-burgundy */
-  }
-
-  /* Active page indicator: Rich deep mahogany text color only */
-  .menu-list__link--active {
-    color: #6b1426 !important; /* Deep mahogany for active page */
-    font-weight: 600 !important;
-  }
-
-  .menu-list__link::after,
-  .menu-list__link--active::after {
-    display: none !important;
-    content: none !important;
-  }
-
-  /* Subtle dimming for sibling links on hover */
-  .menu-list:has(.menu-list__list-item:hover) .menu-list__link:not(:hover) {
-    opacity: 0.55;
-  }
-
-  /* --- Icons: thinner stroke, soft hover scale + color shift --- */
-  .header-actions__action svg,
-  .header__icon--menu svg {
-    stroke-width: 1.15px;
-    transition: color 0.25s ease, transform 0.2s ease;
-  }
-
-  .header-actions__action:hover svg,
-  .header__icon--menu:hover svg {
-    color: var(--color-brand-mahogany);
-    transform: scale(1.08);
-  }
-
-  /* Cart bubble: clean deep burgundy dot */
-  .cart-bubble {
-    background-color: var(--color-brand-dark) !important;
-    color: #fff !important;
-    font-size: 0.6rem !important;
-    font-weight: 600 !important;
-  }
-
-  /* Elevate header and header-group stacking context when menu drawer is open */
-  html:has(.menu-open),
-  body:has(.menu-open) {
-    overflow: hidden !important;
-  }
-
-  #header-group:has(.menu-open),
-  .header-section:has(.menu-open),
-  .header:has(.menu-open),
-  header-component:has(.menu-open) {
-    z-index: 999999999 !important;
-    contain: none !important;
-    contain-intrinsic-size: none !important;
-    perspective: none !important;
-    transform: none !important;
-    filter: none !important;
-  }
-
-  /* Lower z-index on announcement bar & header elements when drawer is open */
-  #header-group:has(.menu-open) .announcement-bar-section,
-  #header-group:has(.menu-open) .announcement-bar,
-  .header:has(.menu-open) .header-logo,
-  .header:has(.menu-open) header-actions {
-    z-index: 1 !important;
-    opacity: 0.2 !important;
-    pointer-events: none !important;
-    transition: opacity 0.2s ease !important;
-  }
-
-  @media screen and (max-width: 749px) {
-
-    /* Mobile header: absolute centered logo, flex container */
-    .header__columns {
-      display: flex !important;
-      align-items: center;
-      justify-content: space-between !important;
-      padding-inline: 4px 6px;
-      position: relative !important;
-      width: 100%;
-      min-height: 52px;
-    }
-
-    /* Logo: ALWAYS PERFECTLY CENTERED IN THE MIDDLE OF THE SCREEN */
-    .header__columns .header-logo {
-      position: absolute !important;
-      left: 50% !important;
-      top: 50% !important;
-      transform: translate(-50%, -50%) !important;
-      z-index: 2;
-      font-size: 1.02rem;
-      letter-spacing: 0.2em;
-      white-space: nowrap;
-      margin: 0 !important;
-      text-align: center;
-      pointer-events: auto;
-    }
-
-    /* Left side – hamburger menu button */
-    .header__columns .header__icon--menu,
-    .header__columns .header__drawer {
-      z-index: 3;
-      flex-shrink: 0;
-    }
-
-    /* Hide ALL duplicate search buttons in columns on mobile — search lives inside header-actions */
-    .header__columns .search-action,
-    .header__columns .search-action--hidden-on-drawer,
-    .header__columns .search-action--hidden-on-menu,
-    .header__column .search-action {
-      display: none !important;
-    }
-
-    /* Only show search inside header-actions */
-    .header__columns header-actions .search-action--in-actions,
-    header-actions .header-actions__search {
-      display: flex !important;
-    }
-
-    /* Hide any stray dropdown-localization in the columns — we use our custom one inside header-actions */
-    .header__columns .dropdown-localization,
-    .header__columns dropdown-localization-component {
-      display: none !important;
-    }
-
-    /* Right side – header-actions (search, lang, cart icons) */
-    .header__columns header-actions {
-      z-index: 3;
-      flex-shrink: 0;
-      display: flex !important;
-      align-items: center;
-      gap: 1px !important;
-      margin: 0 0 0 auto !important;
-      width: auto !important;
-      max-width: none !important;
-    }
-
-    /* Clean tap targets for mobile icons without forcing excess width */
-    .header-actions__action .svg-wrapper,
-    .header-actions__search .header-actions__action,
-    .header__icon--summary {
-      min-width: 32px !important;
-      min-height: 40px !important;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-  }
-
-
-  /* =============================================
-     MOBILE DRAWER MENU – clean, spacious
-     ============================================= */
-
-  .menu-drawer {
-    background-color: var(--color-brand-warm-white) !important;
-  }
-
-  .menu-drawer__menu-item--mainlist {
-    text-transform: uppercase;
-    letter-spacing: 0.12em;
-    font-size: 0.8rem;
-    font-weight: 500;
-    padding-block: 16px !important;
-    color: var(--color-foreground);
-    transition: color 0.2s ease, padding-inline-start 0.2s ease;
-    border-bottom: 1px solid var(--color-border-soft);
-  }
-
-  .menu-drawer__menu-item--mainlist:hover {
-    color: var(--color-brand-mahogany);
-    padding-inline-start: 8px;
-  }
-
-  .menu-drawer__menu-item--active {
-    color: var(--color-brand-mahogany) !important;
-    font-weight: 600 !important;
-  }
-
-  .menu-drawer__close-button {
-    color: var(--color-foreground);
-    transition: color 0.2s ease, transform 0.2s ease;
-  }
-
-  .menu-drawer__close-button:hover {
-    color: var(--color-brand-mahogany);
-    transform: rotate(90deg);
-  }
-
-  /* =============================================
-     TOVEE – Transparent hero header (home page)
-     Dark text on light hero imagery
-     ============================================= */
-
-  #header-group {
-    position: relative;
-    z-index: var(--layer-menu-drawer);
-  }
-
-  /* Keep logo visible when inverse logo is disabled on light hero */
-  .header[transparent]:not([data-sticky-state='active']) .header-logo__image-container--original {
-    display: block !important;
-  }
-
-  .header[transparent]:not([data-sticky-state='active']) .header-logo__image-container--inverse {
-    display: none !important;
-  }
-
-  .header[transparent]:not([data-sticky-state='active']) .header__row {
-    background: #ffffff !important;
-    border-bottom: 1px solid var(--color-border-soft) !important;
-  }
-
-  .header[transparent]:not([data-sticky-state='active']) .header__underlay {
-    opacity: 1 !important;
-  }
-
-  @media screen and (min-width: 750px) {
-    .header[transparent]:not([data-sticky-state='active']):not(:has(.menu-list__link:is(:hover, [aria-expanded='true'])))
-      .header-menu {
-      visibility: hidden;
-      pointer-events: none;
-    }
-  }
-
-  .header[transparent]:not([data-sticky-state='active']) .header-logo {
-    color: var(--color-foreground);
-    font-size: 0.82rem;
-    letter-spacing: 0.28em;
-    font-weight: 500;
-  }
-
-  .header[transparent]:not([data-sticky-state='active']) .header-logo:hover {
-    color: var(--color-brand-mahogany);
-  }
-
-  .header[transparent]:not([data-sticky-state='active']) .header-actions__action,
-  .header[transparent]:not([data-sticky-state='active']) .header__icon--menu {
-    color: var(--color-foreground);
-  }
-
-  .header[transparent]:not([data-sticky-state='active']) .header-actions__action:hover,
-  .header[transparent]:not([data-sticky-state='active']) .header__icon--menu:hover {
-    color: var(--color-brand-mahogany);
-  }
-
-  .header[transparent]:not([data-sticky-state='active']) .header-actions__action:hover svg,
-  .header[transparent]:not([data-sticky-state='active']) .header__icon--menu:hover svg {
-    color: var(--color-brand-mahogany);
-    transform: scale(1.06);
-  }
-
-  /* Solid white header */
-  .header:not([transparent]) .header__row,
-  .header[transparent][data-sticky-state='active'] .header__row,
-  .header[transparent]:not([data-sticky-state='active']) .header__row {
-    background: #ffffff !important;
-    border-bottom: 1px solid var(--color-border-soft) !important;
-  }
-
-  .header:not([transparent]) .header__underlay-closed,
-  .header[transparent] .header__underlay-closed {
-    --color-background-top-row: #ffffff;
-    opacity: 1 !important;
-  }
-
-  .header:not([transparent]) .header-logo,
-  .header[transparent][data-sticky-state='active'] .header-logo {
-    letter-spacing: 0.28em;
-    font-size: 0.82rem;
-    font-weight: 500;
-    text-transform: uppercase;
-  }
-
 {% endstylesheet %}
 
 {% unless request.design_mode %}

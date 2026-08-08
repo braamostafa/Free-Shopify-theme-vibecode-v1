@@ -15,6 +15,9 @@ import { DrawerOpenEvent } from '@theme/theme-drawer';
  * @extends {Component}
  */
 class CartDrawerComponent extends Component {
+  /** @type {number} */
+  #summaryThreshold = 0.5;
+
   /** @type {import('@theme/theme-drawer').ThemeDrawer | null} */
   get #themeDrawer() {
     return /** @type {import('@theme/theme-drawer').ThemeDrawer | null} */ (this.closest('theme-drawer'));
@@ -74,8 +77,9 @@ class CartDrawerComponent extends Component {
       event.target instanceof Element ? event.target.closest('dialog:modal') : null
     );
 
-    // Do NOT open the drawer immediately upon clicking "Add to Cart" before the promise is resolved.
-    // It should only open after the product has been successfully added to the cart.
+    if (shouldAutoOpen && !sourceModal && !this.#isCartEmpty()) {
+      this.#themeDrawer?.open();
+    }
 
     event.promise
       ?.then(({ detail }) => {
@@ -110,15 +114,20 @@ class CartDrawerComponent extends Component {
     const dialog = this.#dialog;
     if (!dialog) return;
 
+    // Refs do not cross nested `*-component` boundaries (e.g., `cart-items-component`), so we query within the dialog.
+    const content = dialog.querySelector('.cart-drawer__content');
     const summary = dialog.querySelector('.cart-drawer__summary');
 
-    if (!summary) {
+    if (!content || !summary) {
+      // Ensure the dialog doesn't get stuck in "unsticky" mode when summary disappears (e.g., empty cart).
       dialog.setAttribute('cart-summary-sticky', 'false');
       return;
     }
 
-    // Summary lives outside the scroll area — keep it pinned at the drawer bottom.
-    dialog.setAttribute('cart-summary-sticky', 'true');
+    const drawerHeight = dialog.getBoundingClientRect().height;
+    const summaryHeight = summary.getBoundingClientRect().height;
+    const ratio = summaryHeight / drawerHeight;
+    dialog.setAttribute('cart-summary-sticky', ratio > this.#summaryThreshold ? 'false' : 'true');
   }
 }
 

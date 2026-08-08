@@ -226,7 +226,7 @@
           ]
         }
       },
-      "name": "Featured collection",
+      "name": "t:names.product_list",
       "settings": {
         "collection": "all",
         "layout_type": "grid",

@@ -1,20 +1,5 @@
 
 
-<script>
-  (function() {
-    const path = window.location.pathname;
-    const match = path.match(/\/collections\/([^\/]+)$/);
-    if (match) {
-      const handle = match[1];
-      if (handle === 'all') {
-        window.location.replace('/collections');
-      } else {
-        window.location.replace('/collections?category=' + handle);
-      }
-    }
-  })();
-</script>
-
 <script
   src="{{ 'results-list.js' | asset_url }}"
   type="module"
@@ -43,6 +28,8 @@
     render 'contrast-override', background_color: section.settings.background_color, section_id: section.id
   endif
 %}
+
+{% render 'collection-wrapper-styles' %}
 
 <div
   class="section-background{% if section.settings.background_color != blank %} color-custom-{{ section.id }}{% endif %}"

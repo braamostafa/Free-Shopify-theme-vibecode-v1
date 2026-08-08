@@ -20,7 +20,7 @@
             "max_width": "normal",
             "alignment": "center",
             "type_preset": "h3",
-            "font": "var(--font-primary--family)",
+            "font": "var(--font-body--family)",
             "line_height": "normal",
             "letter_spacing": "normal",
             "case": "none",
@@ -44,7 +44,7 @@
             "max_width": "normal",
             "alignment": "center",
             "type_preset": "rte",
-            "font": "var(--font-primary--family)",
+            "font": "var(--font-body--family)",
             "line_height": "normal",
             "letter_spacing": "normal",
             "case": "none",
@@ -135,7 +135,7 @@
                 "max_width": "normal",
                 "alignment": "left",
                 "type_preset": "h4",
-                "font": "var(--font-primary--family)",
+                "font": "var(--font-body--family)",
                 "line_height": "normal",
                 "letter_spacing": "normal",
                 "case": "none",
@@ -241,7 +241,7 @@
           ]
         }
       },
-      "name": "Featured collection",
+      "name": "t:names.product_list",
       "settings": {
         "collection": "all",
         "layout_type": "grid",

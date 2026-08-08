@@ -114,15 +114,6 @@
   endif
 %}
 
-{% if section.index == 1 %}
-  {%- if media_1 == 'image' and section.settings.image_1 != blank -%}
-    <link rel="preload" as="image" href="{{ section.settings.image_1 | image_url: width: 1920 }}" fetchpriority="high">
-  {%- endif -%}
-  {%- if media_1 == 'image' and section.settings.image_1_mobile != blank and section.settings.custom_mobile_media -%}
-    <link rel="preload" as="image" href="{{ section.settings.image_1_mobile | image_url: width: 800 }}" fetchpriority="high" media="(max-width: 749px)">
-  {%- endif -%}
-{% endif %}
-
 {% capture media_slot_1 %}
   {%- if media_1 == 'image' and media_1_mobile == 'image' -%}
     {%- comment -%} Both desktop and mobile are images. Assume similar images, and this is art direction: use picture element. {%- endcomment -%}

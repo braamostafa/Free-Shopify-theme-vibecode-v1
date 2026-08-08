@@ -35,50 +35,39 @@
 </div>
 
 {% stylesheet %}
- /* تنسيق الشاشات الصغيرة (الموبايل) */
-@media screen and (max-width: 749px) {
-  .product-information.section--page-width .product-details > .group-block {
-    padding-inline: 0;
+  /* Clear padding on mobile, if not full-width */
+  @media screen and (max-width: 749px) {
+    .product-information.section--page-width .product-details > .group-block {
+      padding-inline: 0;
+    }
   }
-}
 
-.view-product-title {
-  display: none;
-}
+  .view-product-title {
+    display: none;
+  }
 
-/* الوضع الافتراضي: كل الشاشات (الهاتف، التابلت، اللابتوب الصغير) */
-/* العناصر بتنزل تحت بعضها تلقائياً عشان تمنع التداخل */
-.product-details {
-  display: flex;
-  flex-direction: column; 
-  width: 100%;
-  align-self: start;
-  justify-content: center;
-  gap: 20px; /* مسافة أمان بين الصورة والبيانات والزرار */
-}
-
-/* نقطة التحول الحاسمة (فقط لشاشات الكمبيوتر الكبيرة والواسعة) */
-@media screen and (min-width: 1100px) { 
+  /* Container styles */
   .product-details {
-    flex-direction: row; /* هنا بس الصورة والبيانات يجوا جنب بعض */
-    flex-wrap: nowrap;
+    display: flex;
+    align-self: start;
+    justify-content: center;
   }
 
-  .product-details > .group-block {
-    height: min-content;
-    width: 100%; /* تعديل: جعل العمود يملأ المساحة بالكامل بدلاً من 50% لتجنب الفراغ والتكدس */
-  }
+  @media screen and (min-width: 750px) {
+    .product-details > .group-block {
+      height: min-content;
+    }
 
-  .full-height--desktop {
-    height: 100%;
-    max-height: calc(100vh - var(--header-group-height, 0));
-    min-height: fit-content;
-  }
+    .full-height--desktop {
+      height: 100%;
+      max-height: calc(100vh - var(--header-group-height, 0));
+      min-height: fit-content;
+    }
 
-  .full-height--desktop .group-block {
-    align-self: var(--details-position, 'flex-start');
+    .full-height--desktop .group-block {
+      align-self: var(--details-position, 'flex-start');
+    }
   }
-}
 {% endstylesheet %}
 
 {% schema %}
@@ -144,12 +133,6 @@
     },
     {
       "type": "product-custom-property"
-    },
-    {
-      "type": "complete-routine"
-    },
-    {
-      "type": "pack-selector"
     }
   ],
   "tag": null,
