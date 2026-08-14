@@ -1,5 +1,5 @@
-Contact us :
- facebook.com/vibecode26
+If you need any modifications, please contact us :facebook.com/vibecode26
+ 
 
 # تركيب الثيم على شوبيفاي (شرح للمبتدئين)
 
