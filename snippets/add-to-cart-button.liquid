@@ -43,10 +43,13 @@
         aria-hidden="true"
         class="svg-wrapper add-to-cart-icon"
       >
-        {{- 'icon-add-to-cart.svg' | inline_asset_content -}}
+        {{- 'icon-cart.svg' | inline_asset_content -}}
       </span>
     {% endif %}
-    {{- add_to_cart_text | default: default_add_to_cart_text -}}
+    <span class="add-to-cart__spinner" aria-hidden="true"></span>
+    <span class="add-to-cart-text">
+      {{- add_to_cart_text | default: default_add_to_cart_text -}}
+    </span>
     {% comment %} checkmark burst markup {% endcomment %}
     <span class="add-to-cart__added">
       <span class="svg-wrapper add-to-cart__added-icon">

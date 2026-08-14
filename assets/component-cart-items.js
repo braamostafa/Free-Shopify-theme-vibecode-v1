@@ -172,6 +172,17 @@ export class CartItemsComponent extends createViewEventElement(Component) {
     // If the cart item row is the last row, optimistically trigger the cart empty state
     const isEmptyCart = rowsToRemove.length == this.refs.cartItemRows.length;
 
+    // In the drawer, removing the last line closes it once with its slide-out
+    // animation. Skipping the empty-state swap avoids the drawer looking like
+    // it closes and reopens; the SRA morph renders the empty state behind the
+    // closed drawer so it's ready the next time the drawer opens.
+    if (isEmptyCart && this.isDrawer) {
+      const drawer = this.closest('theme-drawer');
+      if (drawer && typeof drawer.close === 'function') drawer.close();
+      rowsToRemove.forEach((row) => row.remove());
+      return;
+    }
+
     const template = document.getElementById('empty-cart-template');
     if (isEmptyCart && template instanceof HTMLTemplateElement) {
       const clone = document.importNode(template.content, true);

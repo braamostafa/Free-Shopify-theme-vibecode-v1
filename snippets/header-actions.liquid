@@ -115,6 +115,18 @@
 
   {% if settings.cart_type == 'drawer' and template.name != 'cart' %}
     <button
+      class="header-actions__action button-unstyled header-actions__wishlist-btn"
+      onclick="window.wishlistDrawer && window.wishlistDrawer.open()"
+      aria-label="Wishlist"
+    >
+      <span class="svg-wrapper">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+        </svg>
+      </span>
+      <span class="wishlist-count-badge header-actions__wishlist-count" data-wishlist-count hidden></span>
+    </button>
+    <button
       class="header-actions__action button-unstyled{% if display_style == 'text' %} header-actions__text-style{% endif %}"
       on:click="#cart-drawer/toggle"
       aria-haspopup="dialog"
@@ -127,6 +139,18 @@
       {{ cart_icon }}
     </button>
   {% else %}
+    <button
+      class="header-actions__action button-unstyled header-actions__wishlist-btn"
+      onclick="window.wishlistDrawer && window.wishlistDrawer.open()"
+      aria-label="Wishlist"
+    >
+      <span class="svg-wrapper">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+        </svg>
+      </span>
+      <span class="wishlist-count-badge header-actions__wishlist-count" data-wishlist-count hidden></span>
+    </button>
     <a
       href="{{ routes.cart_url }}"
       class="header-actions__action action__cart{% if display_style == 'text' %} header-actions__text-style{% endif %}"
@@ -226,6 +250,36 @@
     }
   }
 
+  .header-actions__wishlist-btn {
+    position: relative;
+  }
+
+  .header-actions__wishlist-btn .svg-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.5rem;
+    height: 1.5rem;
+  }
+
+  .header-actions__wishlist-count {
+    position: absolute;
+    top: 0;
+    inset-inline-end: 0;
+  }
+
+  .header-actions__wishlist-btn:hover svg {
+    fill: #e74c3c;
+    stroke: #e74c3c;
+    transition: fill 0.2s, stroke 0.2s;
+  }
+
+  @media screen and (max-width: 749px) {
+    .header-actions__wishlist-btn {
+      display: none;
+    }
+  }
+
   @media screen and (min-width: 750px) {
     .header-actions--text {
       gap: var(--gap-xl);
@@ -253,6 +307,16 @@
     --cart-bubble-right: 2.5px;
 
     position: relative;
+  }
+
+  .header-actions__cart-icon .svg-wrapper {
+    width: 1.5rem;
+    height: 1.5rem;
+
+    & > svg {
+      width: 1.5rem;
+      height: 1.5rem;
+    }
   }
 
   .header-actions__cart-icon .cart-bubble {

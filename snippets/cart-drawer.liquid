@@ -22,6 +22,12 @@
     fetchpriority="low"
   ></script>
 
+  <script
+    type="module"
+    src="{{ 'cart-complete-cart.js' | asset_url }}"
+    fetchpriority="low"
+  ></script>
+
   {% capture empty_cart_drawer_content %}
     <div
       class="cart-drawer__content"
@@ -43,6 +49,7 @@
   <theme-drawer
     id="cart-drawer"
     data-skip-node-update
+    data-overlay
   >
     <dialog
       ref="panel"
@@ -113,10 +120,130 @@
               >
                 <scroll-hint class="cart-drawer__items">
                   {% render 'cart-products', context: 'drawer' %}
+
+                  {%- liquid
+                    assign cart_product_ids = cart.items | map: 'product_id'
+                    assign all_products = collections.all.products
+                    assign added_count = 0
+                    for product in all_products limit: 40
+                      if added_count >= 4
+                        break
+                      endif
+                      if product.available
+                        unless cart_product_ids contains product.id
+                          assign added_count = added_count | plus: 1
+                        endunless
+                      endif
+                    endfor
+                  -%}
+                  {%- if added_count > 0 -%}
+                    <cart-complete-cart class="cart-complete-cart">
+                      <div class="cart-complete-cart__header">
+                        <h3 class="cart-complete-cart__title">
+                          {{- 'content.complete_your_cart' | t -}}
+                        </h3>
+                        <div class="cart-complete-cart__nav">
+                          <button
+                            type="button"
+                            class="cart-complete-cart__arrow"
+                            data-prev
+                            aria-label="{{ 'content.pagination.previous' | t }}"
+                          >
+                            <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                              <path
+                                stroke="currentColor"
+                                stroke-width="var(--icon-stroke-width)"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                d="M12.5 5 7.5 10l5 5"
+                              ></path>
+                            </svg>
+                          </button>
+                          <button
+                            type="button"
+                            class="cart-complete-cart__arrow"
+                            data-next
+                            aria-label="{{ 'content.pagination.next' | t }}"
+                          >
+                            <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                              <path
+                                stroke="currentColor"
+                                stroke-width="var(--icon-stroke-width)"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                d="M7.5 5l5 5-5 5"
+                              ></path>
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+
+                      <div class="cart-complete-cart__track" data-track>
+                        {%- assign shown_count = 0 -%}
+                        {%- for product in all_products limit: 40 -%}
+                          {%- if shown_count >= 4 -%}
+                            {%- break -%}
+                          {%- endif -%}
+                          {%- if product.available -%}
+                            {%- unless cart_product_ids contains product.id -%}
+                              {%- assign shown_count = shown_count | plus: 1 -%}
+                              <div class="cart-complete-cart__slide">
+                                <a
+                                  href="{{ product.url }}"
+                                  class="cart-complete-cart__media"
+                                  tabindex="-1"
+                                  aria-hidden="true"
+                                >
+                                  {%- if product.featured_media -%}
+                                    {{- product.featured_media.preview_image | image_url: width: 300 | image_tag:
+                                      loading: 'lazy',
+                                      class: 'cart-complete-cart__image',
+                                      widths: '150, 300'
+                                    -}}
+                                  {%- endif -%}
+                                </a>
+
+                                <a
+                                  href="{{ product.url }}"
+                                  class="cart-complete-cart__product-title"
+                                >
+                                  {{- product.title | escape -}}
+                                </a>
+
+                                <button
+                                  type="button"
+                                  class="cart-complete-cart__add-button"
+                                  data-add
+                                  data-variant-id="{{ product.selected_or_first_available_variant.id }}"
+                                  data-quantity="1"
+                                  data-add-text="{{ 'actions.add' | t }}"
+                                  data-added-text="{{ 'actions.added' | t }}"
+                                >
+                                  <span
+                                    class="cart-complete-cart__spinner"
+                                    aria-hidden="true"
+                                  ></span>
+                                  <span data-text-label>{{ 'actions.add' | t }}</span>
+                                </button>
+                              </div>
+                            {%- endunless -%}
+                          {%- endif -%}
+                        {%- endfor -%}
+                      </div>
+                    </cart-complete-cart>
+                  {%- endif -%}
                 </scroll-hint>
 
                 <div class="cart-drawer__summary">
                   {% render 'cart-summary', section_id: 'cart-drawer-section' %}
+
+                  <button
+                    type="button"
+                    class="cart-drawer__continue-shopping button-unstyled"
+                    on:click="#cart-drawer/close"
+                  >
+                    {{- 'actions.continue_shopping' | t -}}
+                  </button>
                 </div>
               </scroll-hint>
             {%- endif -%}
@@ -194,6 +321,76 @@
     margin-inline-start: auto;
   }
 
+  /* ── Cart drawer refinements ── */
+  theme-drawer#cart-drawer .theme-drawer__dialog {
+    --theme-drawer-width: min(28.75rem, 100vw);
+  }
+
+  theme-drawer#cart-drawer .theme-drawer__dialog[open] {
+    border-start-start-radius: var(--style-border-radius-lg);
+    border-end-start-radius: var(--style-border-radius-lg);
+  }
+
+  theme-drawer#cart-drawer .theme-drawer__header {
+    padding: var(--padding-md) var(--padding-lg);
+    border-block-end: 1px solid rgb(var(--color-foreground-rgb) / 0.08);
+  }
+
+  theme-drawer#cart-drawer .theme-drawer__title {
+    font-size: var(--font-size--lg);
+    letter-spacing: 0.01em;
+  }
+
+  .cart-drawer__content .theme-drawer__title {
+    font-size: var(--font-size--md);
+    color: rgb(var(--color-foreground-rgb) / 0.85);
+    margin-block-end: var(--margin-md);
+  }
+
+  .cart-drawer__continue-shopping {
+    margin-block-start: calc(var(--gap-md) * -0.5);
+    font-size: var(--font-size--sm);
+    color: rgb(var(--color-foreground-rgb) / 0.65);
+    text-decoration: underline;
+    text-decoration-color: rgb(var(--color-foreground-rgb) / 0.25);
+    text-underline-offset: 3px;
+    cursor: pointer;
+    padding-block: var(--padding-2xs);
+
+    &:hover {
+      color: var(--color-foreground);
+      text-decoration-color: currentColor;
+    }
+  }
+
+  .theme-drawer__dialog .cart__checkout-button {
+    border-radius: var(--style-border-radius-buttons-primary);
+    transition: transform 0.2s var(--ease-out-cubic), filter 0.2s ease;
+
+    &:hover:not(:disabled) {
+      transform: translateY(-1px);
+      filter: brightness(1.04);
+    }
+  }
+
+  .theme-drawer__dialog .cart-totals__total-value {
+    font-size: var(--font-size--xl);
+  }
+
+  /* Item thumbnails: soft rounded corners inside the drawer */
+  .theme-drawer__dialog .cart-items__media-container {
+    border-radius: var(--style-border-radius-md);
+    overflow: hidden;
+  }
+
+  .theme-drawer__dialog .cart-items__title {
+    font-weight: 500;
+  }
+
+  .theme-drawer__dialog .cart-items__price {
+    font-weight: 600;
+  }
+
   .cart-drawer__summary {
     --cart-drawer-summary-padding: var(--padding-lg);
 
@@ -209,6 +406,13 @@
     background-color: var(--color-background);
     /* stylelint-disable-next-line color-named */
     mask-image: linear-gradient(to bottom, transparent, black var(--cart-drawer-summary-padding));
+    /* Let clicks pass through the faded top strip to the scrolled items
+       below (e.g. the "complete your cart" add buttons). */
+    pointer-events: none;
+
+    & > * {
+      pointer-events: auto;
+    }
 
     @media screen and (min-width: 750px) {
       --cart-drawer-summary-padding: var(--padding-2xl);
@@ -275,6 +479,179 @@
     .cart-drawer__header,
     .cart-drawer__content {
       background: transparent;
+    }
+  }
+
+  /* ── Complete your cart carousel ── */
+  .cart-complete-cart {
+    margin-block: var(--gap-lg) var(--padding-lg);
+    padding-block-start: var(--padding-lg);
+    border-block-start: 1px solid rgb(var(--color-foreground-rgb) / 0.08);
+  }
+
+  .cart-complete-cart__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--gap-md);
+    margin-block-end: var(--padding-md);
+  }
+
+  .cart-complete-cart__title {
+    margin: 0;
+    font-size: var(--font-size--sm);
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: rgb(var(--color-foreground-rgb) / 0.7);
+  }
+
+  .cart-complete-cart__nav {
+    display: flex;
+    gap: var(--gap-2xs);
+  }
+
+  .cart-complete-cart__arrow {
+    --arrow-size: 2rem;
+
+    width: var(--arrow-size);
+    height: var(--arrow-size);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border: 1px solid rgb(var(--color-foreground-rgb) / 0.12);
+    border-radius: 50%;
+    background-color: transparent;
+    color: var(--color-foreground);
+    cursor: pointer;
+    transition: background-color 0.2s ease, color 0.2s ease, opacity 0.2s ease;
+
+    & svg {
+      width: var(--icon-size-xs);
+      height: var(--icon-size-xs);
+    }
+
+    &:hover:not(:disabled) {
+      background-color: rgb(var(--color-foreground-rgb) / 0.08);
+    }
+
+    &[disabled] {
+      opacity: 0.3;
+      cursor: default;
+    }
+  }
+
+  .cart-complete-cart__track {
+    display: flex;
+    gap: var(--gap-sm);
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+  }
+
+  .cart-complete-cart__slide {
+    flex: 0 0 46%;
+    min-width: 0;
+    scroll-snap-align: start;
+    display: flex;
+    flex-direction: column;
+    gap: var(--gap-2xs);
+    padding: var(--padding-sm);
+    border: 1px solid rgb(var(--color-foreground-rgb) / 0.08);
+    border-radius: var(--style-border-radius-md);
+    background-color: rgb(var(--color-foreground-rgb) / 0.02);
+  }
+
+  .cart-complete-cart__media {
+    display: block;
+    aspect-ratio: 1;
+    overflow: hidden;
+    border-radius: var(--style-border-radius-sm);
+    background-color: rgb(var(--color-foreground-rgb) / 0.04);
+  }
+
+  .cart-complete-cart__image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+  }
+
+  .cart-complete-cart__product-title {
+    font-size: var(--font-size--xs);
+    color: var(--color-foreground);
+    text-decoration: none;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    min-height: 2.6em;
+    line-height: 1.3;
+  }
+
+  .cart-complete-cart__add-button {
+    margin-block-start: auto;
+    width: 100%;
+    padding-block: var(--padding-xs);
+    border-radius: var(--style-border-radius-pills);
+    font-size: var(--font-size--xs);
+    font-weight: 600;
+    cursor: pointer;
+    background-color: var(--color-primary-button-background);
+    color: var(--color-primary-button-text);
+    border: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.45rem;
+    transition: opacity 0.2s ease, transform 0.2s var(--ease-out-cubic);
+
+    &:hover:not(:disabled) {
+      opacity: 0.85;
+      transform: translateY(-1px);
+    }
+
+    &[disabled] {
+      opacity: 0.5;
+      cursor: default;
+    }
+
+    &.is-added {
+      background-color: rgb(var(--color-foreground-rgb) / 0.12);
+      color: var(--color-foreground);
+    }
+
+    &.is-loading {
+      opacity: 0.75;
+
+      [data-text-label] {
+        display: none;
+      }
+    }
+  }
+
+  .cart-complete-cart__spinner {
+    display: none;
+    width: 0.9em;
+    height: 0.9em;
+    border: 2px solid currentColor;
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: cart-complete-cart-spin 0.7s linear infinite;
+
+    .is-loading & {
+      display: inline-block;
+    }
+  }
+
+  @keyframes cart-complete-cart-spin {
+    to {
+      transform: rotate(360deg);
     }
   }
 {% endstylesheet %}

@@ -1,0 +1,195 @@
+{%- doc -%}
+  Renders a fixed mobile bottom navigation bar with Home, Cart and Search actions.
+  Visible only on mobile (max-width: 749px).
+{%- enddoc -%}
+
+<mobile-bottom-nav class="mobile-bottom-nav" aria-label="Main navigation">
+  {%- comment -%} — Home (left) — {%- endcomment -%}
+  <a
+    href="{{ routes.root_url }}"
+    class="mobile-bottom-nav__action"
+    aria-label="{{ 'accessibility.home' | t | default: 'Home' }}"
+  >
+    <span class="svg-wrapper" aria-hidden="true">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="none">
+        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="var(--icon-stroke-width)" d="M2.8 9.6 10 3.6l7.2 6M4.4 8.2v8h11.2v-8"/>
+      </svg>
+    </span>
+    <span class="mobile-bottom-nav__label">Home</span>
+  </a>
+
+  {%- comment -%} — Wishlist — {%- endcomment -%}
+  <button
+    class="mobile-bottom-nav__action button-unstyled"
+    onclick="window.wishlistDrawer && window.wishlistDrawer.open()"
+    aria-label="Wishlist"
+  >
+    <span class="svg-wrapper" aria-hidden="true">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="var(--icon-stroke-width)" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+      </svg>
+    </span>
+    <span class="wishlist-count-badge mobile-bottom-nav__wishlist-count" data-wishlist-count hidden></span>
+    <span class="mobile-bottom-nav__label">Wishlist</span>
+  </button>
+
+  {%- comment -%} — Cart (center) — {%- endcomment -%}
+  {% if settings.cart_type == 'drawer' and template.name != 'cart' %}
+    <button
+      class="mobile-bottom-nav__action mobile-bottom-nav__cart button-unstyled"
+      on:click="#cart-drawer/toggle"
+      aria-haspopup="dialog"
+      aria-expanded="false"
+      aria-controls="cart-drawer"
+      aria-label="{{ 'accessibility.cart' | t }}"
+    >
+      <span class="svg-wrapper" aria-hidden="true">
+        {{ 'icon-cart.svg' | inline_asset_content }}
+      </span>
+      <span class="mobile-bottom-nav__label">{{ 'content.cart_title' | t }}</span>
+      {% render 'cart-bubble', limit: 100 %}
+    </button>
+  {% else %}
+    <a
+      href="{{ routes.cart_url }}"
+      class="mobile-bottom-nav__action mobile-bottom-nav__cart"
+      aria-label="{{ 'accessibility.cart' | t }}"
+    >
+      <span class="svg-wrapper" aria-hidden="true">
+        {{ 'icon-cart.svg' | inline_asset_content }}
+      </span>
+      <span class="mobile-bottom-nav__label">{{ 'content.cart_title' | t }}</span>
+      {% render 'cart-bubble', limit: 100 %}
+    </a>
+  {% endif %}
+
+  {%- comment -%} — Search (right) — {%- endcomment -%}
+  <search-button class="mobile-bottom-nav__action">
+    <button
+      class="mobile-bottom-nav__action-inner button-unstyled"
+      on:click="#search-modal/showDialog"
+      aria-haspopup="dialog"
+      aria-label="{{ 'content.search_input_label' | t }}"
+    >
+      <span class="svg-wrapper" aria-hidden="true">
+        {{ 'icon-search.svg' | inline_asset_content }}
+      </span>
+      <span class="mobile-bottom-nav__label">{{ 'content.search' | t }}</span>
+    </button>
+  </search-button>
+</mobile-bottom-nav>
+
+{% stylesheet %}
+  .mobile-bottom-nav {
+    position: fixed;
+    z-index: 4;
+    inset-inline: 0;
+    bottom: 0;
+    display: none;
+    align-items: center;
+    justify-content: space-around;
+    padding-block: 4px calc(4px + env(safe-area-inset-bottom));
+    background-color: rgb(var(--color-background-rgb));
+    border-block-start: 1px solid rgb(var(--color-foreground-rgb) / 0.12);
+    gap: 0;
+  }
+
+  @media screen and (max-width: 749px) {
+    .mobile-bottom-nav {
+      display: flex;
+    }
+
+    body {
+      padding-block-end: calc(56px + env(safe-area-inset-bottom));
+    }
+  }
+
+  .mobile-bottom-nav__action,
+  search-button.mobile-bottom-nav__action {
+    position: relative;
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1px;
+    min-height: 46px;
+    color: rgb(var(--color-foreground-rgb));
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    padding: 4px 0;
+    text-decoration: none;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  search-button.mobile-bottom-nav__action {
+    display: flex;
+  }
+
+  .mobile-bottom-nav__action-inner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1px;
+    padding: 4px 0;
+    flex: 1;
+  }
+
+  .mobile-bottom-nav__action .svg-wrapper,
+  .mobile-bottom-nav__action-inner .svg-wrapper {
+    width: 22px;
+    height: 22px;
+  }
+
+  .mobile-bottom-nav__wishlist-count {
+    position: absolute;
+    top: 1px;
+    right: calc(50% - 19px);
+  }
+
+  .mobile-bottom-nav__action .svg-wrapper > svg,
+  .mobile-bottom-nav__action-inner .svg-wrapper > svg {
+    width: 22px;
+    height: 22px;
+  }
+
+  .mobile-bottom-nav__label {
+    font-family: var(--font-body--family);
+    font-size: 0.625rem;
+    line-height: 1;
+    letter-spacing: 0.02em;
+  }
+
+  /* Cart bubble badge */
+  .mobile-bottom-nav__cart {
+    position: relative;
+    overflow: visible;
+  }
+
+  .mobile-bottom-nav__cart .svg-wrapper {
+    overflow: visible;
+  }
+
+  .mobile-bottom-nav__cart .svg-wrapper > svg {
+    mask: none !important;
+  }
+
+  .mobile-bottom-nav__cart .cart-bubble {
+    position: absolute;
+    top: 0px;
+    right: calc(50% - 19px);
+    width: 17px;
+    height: 17px;
+  }
+
+  .mobile-bottom-nav__cart .cart-bubble__background {
+    border-radius: 50%;
+  }
+
+  .mobile-bottom-nav__cart .cart-bubble__text {
+    font-size: 0.5625rem;
+  }
+{% endstylesheet %}

@@ -64,7 +64,11 @@
     "view_disclosure_information_for_product": "View disclosure information for {{ product_title }}",
     "view_pricing_info": "View pricing information",
     "price_filter_low": "Low price",
-    "price_filter_high": "High price"
+    "price_filter_high": "High price",
+    "breadcrumb": "Breadcrumb"
+  },
+  "breadcrumbs": {
+    "home": "Home"
   },
   "actions": {
     // Quick add button on product cards, shortened version of add to cart
@@ -305,6 +309,7 @@
     "price_at": "at",
     "price_range": "Price range",
     "your_cart_is_empty": "Your cart is empty",
+    "complete_your_cart": "Complete your cart",
     "product_count": "Product count",
     "errors": "Errors",
     "wrong_password": "Wrong password",

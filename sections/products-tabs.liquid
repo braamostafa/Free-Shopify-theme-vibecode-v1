@@ -1,0 +1,823 @@
+﻿{%- comment -%}
+  Section: Products Tabs
+  نظام تابات للمنتجات بطريقة بسيطة ونظيفة
+{%- endcomment -%}
+
+{%- comment -%} Grid styles required by the theme resource-list (same as "You may also like"); card and gallery styles are rendered by the card snippets themselves {%- endcomment -%}
+{% render 'resource-list-styles' %}
+
+<div class="products-tabs-section" data-section-id="{{ section.id }}" data-product-card-styles>
+{%- comment -%} CSS Part: التصميم (كل القيم قابلة للتعديل من محرر الثيم) {%- endcomment -%}
+<style>
+  .products-tabs-section {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 40px 20px;
+
+    --tabs-arrow-size: {{ section.settings.arrow_size }}px;
+  }
+
+  .products-tabs__header {
+    text-align: center;
+    margin-bottom: 30px;
+  }
+
+  .products-tabs__header h2 {
+    font-size: 32px;
+    font-weight: 600;
+    color: #333;
+    margin: 0;
+  }
+
+  /* أزرار التابات */
+  .tabs-buttons-slider {
+    position: relative;
+    margin-bottom: 40px;
+  }
+
+  .products-tabs__buttons {
+    display: flex;
+    gap: {{ section.settings.tab_gap }}px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    justify-content: {% if section.settings.tabs_alignment == 'center' %}center{% else %}flex-start{% endif %};
+    {% if section.settings.tabs_alignment == 'center' %}
+    flex-wrap: wrap;
+    {% endif %}
+    scroll-behavior: smooth;
+    scroll-snap-type: x proximity;
+  }
+
+  .products-tabs__buttons::-webkit-scrollbar {
+    display: none;
+  }
+
+  .tab-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: {{ section.settings.tab_padding_y }}px {{ section.settings.tab_padding_x }}px;
+    background: transparent;
+    border: 1.5px solid {{ section.settings.tab_border_color }};
+    border-radius: {{ section.settings.tab_radius }}px;
+    font-size: {{ section.settings.tab_font_size }}px;
+    font-weight: 500;
+    color: {{ section.settings.tab_color }};
+    cursor: pointer;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+    flex-shrink: 0;
+    scroll-snap-align: center;
+  }
+
+  .tab-button svg {
+    flex-shrink: 0;
+  }
+
+  .tab-button:hover {
+    border-color: {{ section.settings.tab_hover_color }};
+    color: {{ section.settings.tab_hover_color }};
+  }
+
+  .tab-button.active {
+    background: {{ section.settings.tab_active_bg }};
+    border-color: {{ section.settings.tab_active_bg }};
+    color: {{ section.settings.tab_active_fg }};
+  }
+
+  /* أسهم السلايدر (مخفية افتراضياً على الديسكتوب، تظهر على الموبايل فقط) */
+  .tabs-buttons-slider__arrow {
+    display: none;
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 5;
+    width: var(--tabs-arrow-size);
+    height: var(--tabs-arrow-size);
+    border-radius: {{ section.settings.arrow_radius }}px;
+    border: none;
+    background: {{ section.settings.arrow_bg }};
+    color: {{ section.settings.arrow_fg }};
+    cursor: pointer;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 8px rgb(0 0 0 / 0.15);
+    transition: all 0.2s ease;
+  }
+
+  .tabs-buttons-slider__arrow:hover {
+    background: {{ section.settings.arrow_hover_bg }};
+    transform: translateY(-50%) scale(1.05);
+  }
+
+  .tabs-buttons-slider__arrow--prev {
+    left: {{ section.settings.arrow_offset_x }}px;
+  }
+
+  .tabs-buttons-slider__arrow--next {
+    right: {{ section.settings.arrow_offset_x }}px;
+  }
+
+  [dir="rtl"] .tabs-buttons-slider__arrow--prev {
+    left: auto;
+    right: {{ section.settings.arrow_offset_x }}px;
+  }
+
+  [dir="rtl"] .tabs-buttons-slider__arrow--next {
+    right: auto;
+    left: {{ section.settings.arrow_offset_x }}px;
+  }
+
+  [dir="rtl"] .tabs-buttons-slider__arrow svg {
+    transform: scaleX(-1);
+  }
+
+  /* الموبايل: السلايدر بالأسهم */
+  @media (max-width: 768px) {
+    .products-tabs__buttons {
+      flex-wrap: nowrap;
+      justify-content: flex-start;
+      {% if section.settings.show_arrows_mobile %}
+      padding: 0 calc(var(--tabs-arrow-size) + {{ section.settings.arrow_offset_x }}px + {{ section.settings.arrow_tab_gap }}px);
+      {% else %}
+      padding: 0;
+      {% endif %}
+    }
+
+    {% if section.settings.show_arrows_mobile %}
+    .tabs-buttons-slider__arrow {
+      display: flex;
+    }
+    {% endif %}
+
+    .tab-button {
+      padding: {{ section.settings.tab_padding_y | times: 0.9 }}px {{ section.settings.tab_padding_x | times: 0.85 }}px;
+      font-size: {{ section.settings.tab_font_size | minus: 1 }}px;
+    }
+  }
+
+  /* اختياري: إظهار الأسهم أيضاً على الديسكتوب */
+  {% if section.settings.show_arrows_desktop %}
+  @media (min-width: 769px) {
+    .tabs-buttons-slider__arrow {
+      display: flex;
+    }
+
+    .products-tabs__buttons {
+      padding-left: calc(var(--tabs-arrow-size) + {{ section.settings.arrow_offset_x }}px + {{ section.settings.arrow_tab_gap }}px);
+      padding-right: calc(var(--tabs-arrow-size) + {{ section.settings.arrow_offset_x }}px + {{ section.settings.arrow_tab_gap }}px);
+      flex-wrap: nowrap;
+    }
+  }
+  {% endif %}
+
+  /* ===== إصلاح Layout Shift (CLS) ===== */
+
+  /* حجز مساحة للهيدر حتى لا يقفز عند تحميل الخطوط (FOUT) */
+  .products-tabs__header {
+    min-height: 60px;
+  }
+
+  /* حجز مساحة ثابتة لصف أزرار التابات مع الأسهم */
+  .tabs-buttons-slider {
+    min-height: calc(var(--tabs-arrow-size) + 16px);
+  }
+
+  /* تثبيت ارتفاع أزرار التابات حتى لا يتغير حجمها مع تحميل الخط */
+  .tab-button {
+    min-height: 44px;
+    line-height: 1.2;
+  }
+
+  .tab-button span {
+    display: inline-block;
+  }
+
+/* حجز مساحة محتوى المنتجات قبل اكتمال التحميل (بدون فجوة في الواقع) */
+  .products-tabs__content {
+    position: relative;
+  }
+
+  /* محتوى التابات */
+  .tab-panel {
+    display: none;
+  }
+
+  .tab-panel.active {
+    display: block;
+    animation: fadeIn 0.4s ease;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+/* Grid المنتجات - كارت الثيم */
+  .products-tabs-grid {
+    container-type: inline-size;
+    container-name: resource-list;
+    min-width: 0;
+  }
+
+  /* عدد الأعمدة على الديسكتوب — قابل للتعديل من محرر الثيم (Auto = التلقائي) */
+  {% if section.settings.card_columns != 'auto' %}
+  .products-tabs__content .resource-list--grid {
+    --resource-list-columns-per-row: {{ section.settings.card_columns }};
+  }
+
+  @media screen and (min-width: 750px) {
+    .products-tabs__content .resource-list--grid {
+      grid-template-columns: repeat({{ section.settings.card_columns }}, 1fr) !important;
+    }
+  }
+  {% endif %}
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .products-tabs__header h2 {
+      font-size: 24px;
+    }
+  }
+</style>
+
+{%- comment -%} تنسيقات كارت المنتج المشتركة — نفس الإعدادات بتظهر في "You may also like" {%- endcomment -%}
+{% render 'product-card-shared-styles' %}
+
+  
+  {%- comment -%} Header: العنوان الرئيسي {%- endcomment -%}
+  {% if section.settings.section_title != blank %}
+  <div class="products-tabs__header">
+    <h2>{{ section.settings.section_title }}</h2>
+  </div>
+  {% endif %}
+
+  {%- comment -%} HTML Part 1: أزرار التابات {%- endcomment -%}
+{% liquid
+      assign tab_index = 0
+      assign card_assets_rendered = false
+    %}
+  <div class="tabs-buttons-slider" data-tabs-buttons-slider>
+    <button type="button" class="tabs-buttons-slider__arrow tabs-buttons-slider__arrow--prev" data-tabs-slider-prev aria-label="السابق">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+    </button>
+  <div class="products-tabs__buttons" data-tabs-slider-track>
+    {% for block in section.blocks %}
+      {% if block.type == 'product-tab' %}
+        {% assign tab_index = tab_index | plus: 1 %}
+        <button 
+          class="tab-button{% if tab_index == 1 %} active{% endif %}" 
+          data-tab-id="tab-{{ block.id }}"
+          type="button"
+        >
+          {%- comment -%} الأيقونات المختلفة حسب الاختيار {%- endcomment -%}
+          {% case block.settings.tab_icon %}
+            {% when 'star' %}
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+              </svg>
+            {% when 'sparkles' %}
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 3l1.912 5.813a2 2 0 001.275 1.275L21 12l-5.813 1.912a2 2 0 00-1.275 1.275L12 21l-1.912-5.813a2 2 0 00-1.275-1.275L3 12l5.813-1.912a2 2 0 001.275-1.275L12 3z"></path>
+              </svg>
+            {% when 'fire' %}
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"></path>
+              </svg>
+            {% when 'tag' %}
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path>
+                <line x1="7" y1="7" x2="7.01" y2="7"></line>
+              </svg>
+            {% when 'grid' %}
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="7" height="7"></rect>
+                <rect x="14" y="3" width="7" height="7"></rect>
+                <rect x="14" y="14" width="7" height="7"></rect>
+                <rect x="3" y="14" width="7" height="7"></rect>
+              </svg>
+            {% when 'heart' %}
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+              </svg>
+            {% when 'gift' %}
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="20 12 20 22 4 22 4 12"></polyline>
+                <rect x="2" y="7" width="20" height="5"></rect>
+                <line x1="12" y1="22" x2="12" y2="7"></line>
+                <path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"></path>
+                <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"></path>
+              </svg>
+            {% when 'zap' %}
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+              </svg>
+            {% when 'package' %}
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="16.5" y1="9.4" x2="7.5" y2="4.21"></line>
+                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                <line x1="12" y1="22.08" x2="12" y2="12"></line>
+              </svg>
+            {% when 'crown' %}
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M2 4l3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14"></path>
+              </svg>
+          {% endcase %}
+          <span>{{ block.settings.tab_title }}</span>
+        </button>
+      {% endif %}
+    {% endfor %}
+  </div>
+    <button type="button" class="tabs-buttons-slider__arrow tabs-buttons-slider__arrow--next" data-tabs-slider-next aria-label="التالي">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+    </button>
+  </div>
+
+  {%- comment -%} HTML Part 2: محتوى التابات (الـ Panels) {%- endcomment -%}
+  <div class="products-tabs__content">
+    {% liquid
+      assign tab_index = 0
+    %}
+    {% for block in section.blocks %}
+      {% if block.type == 'product-tab' %}
+        {% assign tab_index = tab_index | plus: 1 %}
+        <div 
+          class="tab-panel{% if tab_index == 1 %} active{% endif %}" 
+          id="tab-{{ block.id }}"
+          {{ block.shopify_attributes }}
+        >
+          
+          {%- comment -%} Liquid Part: جلب المنتجات {%- endcomment -%}
+          {%- comment -%} لو فيه collection محدد: اعرض منتجات الكوليكشن {%- endcomment -%}
+          {%- comment -%} لو مفيش collection: اعرض كل المنتجات من المتجر {%- endcomment -%}
+          
+          {% if block.settings.collection != blank %}
+            {% assign products_source = block.settings.collection.products %}
+          {% else %}
+            {% assign products_source = collections.all.products %}
+          {% endif %}
+
+          {%- comment -%}
+            نفس تصميم "You may also like" لكن بدون Block System:
+            - resource-list / resource-list--grid: نظام الـ Grid الخاص بالثيم
+            - resource-list__item: غلاف كل كارت
+            - render 'product-card-custom': كارت المنتج الموحد (المصدر الوحيد للتصميم والمنطق)
+              أي تعديل عليه يظهر في الكاتالوج ونتائج البحث والتوصيات تلقائياً
+          {%- endcomment -%}
+          <div class="products-tabs-grid">
+            <div class="resource-list resource-list--grid" style="
+              --resource-list-column-gap-desktop: 16px;
+              --resource-list-row-gap-desktop: 16px;
+              --resource-list-columns-mobile: repeat(auto-fill, minmax(9.25rem, 1fr));
+            ">
+              {% for product in products_source limit: block.settings.products_limit %}
+                {% liquid
+                  assign first_card = false
+                  unless card_assets_rendered
+                    assign first_card = true
+                    assign card_assets_rendered = true
+                  endunless
+                %}
+                <div class="resource-list__item">
+                  {% render 'product-card-custom',
+                    product: product,
+                    block: block,
+                    card_block_id: block.id | append: '-' | append: forloop.index,
+                    render_card_assets: first_card,
+                    product_card_gap: 8,
+                    product_view_context: 'collection'
+                  %}
+                </div>
+              {% endfor %}
+            </div>
+          </div>
+
+        </div>
+      {% endif %}
+    {% endfor %}
+  </div>
+
+</div>
+
+
+
+{%- comment -%} JavaScript Part: التفاعل والتبديل بين التابات + أسهم السلايدر {%- endcomment -%}
+<script>
+(function() {
+  var scope = document.querySelector('[data-section-id="{{ section.id }}"] .products-tabs-section')
+    || document.querySelector('[data-section-id="{{ section.id }}"]');
+  if (!scope) return;
+
+  // --- أسهم السلايدر للأزرار ---
+  var track = scope.querySelector('[data-tabs-slider-track]');
+  var prevBtn = scope.querySelector('[data-tabs-slider-prev]');
+  var nextBtn = scope.querySelector('[data-tabs-slider-next]');
+
+  if (track && prevBtn && nextBtn) {
+    var isRTL = getComputedStyle(track).direction === 'rtl';
+    var nudgeTimer = null;
+
+    function nudge(direction) {
+      clearTimeout(nudgeTimer);
+      track.style.transition = 'transform 0.15s ease';
+      track.style.transform = 'translateX(' + (isRTL ? direction : -direction) * 6 + 'px)';
+      nudgeTimer = setTimeout(function() {
+        track.style.transform = 'translateX(0)';
+        setTimeout(function() { track.style.transition = ''; }, 160);
+      }, 150);
+    }
+
+    function move(direction) {
+      var max = track.scrollWidth - track.clientWidth;
+      if (max > 2) {
+        track.scrollBy({ left: (isRTL ? -1 : 1) * direction * 160, behavior: 'smooth' });
+      } else {
+        nudge(direction);
+      }
+    }
+
+    prevBtn.addEventListener('click', function() { move(-1); });
+    nextBtn.addEventListener('click', function() { move(1); });
+  }
+
+  // --- التبديل بين التابات (Delegation: شغال حتى لو العناصر اتحدثت) ---
+  var tabPanels = [];
+
+  scope.addEventListener('click', function(event) {
+    var button = event.target.closest ? event.target.closest('.tab-button') : null;
+    if (!button || !scope.contains(button)) return;
+
+    var targetTabId = button.getAttribute('data-tab-id');
+    if (!targetTabId) return;
+
+    var activeButtons = scope.querySelectorAll('.tab-button');
+    for (var i = 0; i < activeButtons.length; i++) {
+      activeButtons[i].classList.remove('active');
+    }
+    button.classList.add('active');
+
+    if (!tabPanels.length) {
+      tabPanels = scope.querySelectorAll('.tab-panel');
+    }
+    for (var j = 0; j < tabPanels.length; j++) {
+      tabPanels[j].classList.remove('active');
+    }
+
+var targetPanel = document.getElementById(targetTabId);
+    if (targetPanel) targetPanel.classList.add('active');
+  });
+
+// --- اختيار اللون من الكارت (نظام الثيم المدمج): ---
+  // الثيم بيتعامل مع الصور والـ variant بنفسه، ومحتاجين بس نزامن حاجتين
+  // مع اللون المختار: زرار "أضف للسلة" المخصص في الكارت + عرض السعر.
+  scope.addEventListener('product:select', function(event) {
+    var detail = event.detail || {};
+    if (!detail.variantId) return;
+
+    var card = event.target && event.target.closest ? event.target.closest('product-card') : null;
+    if (!card || !scope.contains(card)) return;
+
+    var actions = card.querySelector('.product-card-actions');
+    if (actions) actions.dataset.variantId = detail.variantId;
+
+    if (event.promise && typeof event.promise.then === 'function') {
+      event.promise.then(function(result) {
+        if (!result || !result.detail || !result.detail.html) return;
+        var newPrice = result.detail.html.querySelector('product-price [ref="priceContainer"]');
+        var priceContainer = card.querySelector('product-price [ref="priceContainer"]');
+        if (newPrice && priceContainer) {
+          priceContainer.innerHTML = newPrice.innerHTML;
+        }
+      });
+    }
+  });
+})();
+</script>
+
+{% schema %}
+{
+  "name": "Products Tabs",
+  "tag": "section",
+  "class": "section-products-tabs",
+  "settings": [
+    {
+      "type": "text",
+      "id": "section_title",
+      "label": "Section Title",
+      "default": "Our Products"
+    },
+    {
+      "type": "header",
+      "content": "Tab Buttons"
+    },
+    {
+      "type": "select",
+      "id": "tabs_alignment",
+      "label": "Tabs alignment (desktop)",
+      "options": [
+        {
+          "value": "start",
+          "label": "Start / Left"
+        },
+        {
+          "value": "center",
+          "label": "Center"
+        }
+      ],
+      "default": "center"
+    },
+    {
+      "type": "range",
+      "id": "tab_gap",
+      "label": "Tabs gap",
+      "min": 4,
+      "max": 24,
+      "step": 1,
+      "default": 8,
+      "unit": "px"
+    },
+    {
+      "type": "range",
+      "id": "tab_font_size",
+      "label": "Tab font size",
+      "min": 12,
+      "max": 20,
+      "step": 1,
+      "default": 15,
+      "unit": "px"
+    },
+    {
+      "type": "range",
+      "id": "tab_padding_x",
+      "label": "Tab horizontal padding",
+      "min": 8,
+      "max": 40,
+      "step": 2,
+      "default": 24,
+      "unit": "px"
+    },
+    {
+      "type": "range",
+      "id": "tab_padding_y",
+      "label": "Tab vertical padding",
+      "min": 6,
+      "max": 20,
+      "step": 1,
+      "default": 10,
+      "unit": "px"
+    },
+    {
+      "type": "range",
+      "id": "tab_radius",
+      "label": "Tab border radius",
+      "min": 0,
+      "max": 50,
+      "step": 1,
+      "default": 20,
+      "unit": "px"
+    },
+    {
+      "type": "color",
+      "id": "tab_color",
+      "label": "Tab text color",
+      "default": "#555555"
+    },
+    {
+      "type": "color",
+      "id": "tab_border_color",
+      "label": "Tab border color",
+      "default": "#dddddd"
+    },
+    {
+      "type": "color",
+      "id": "tab_hover_color",
+      "label": "Tab hover color",
+      "default": "#333333"
+    },
+    {
+      "type": "color",
+      "id": "tab_active_bg",
+      "label": "Active tab background",
+      "default": "#333333"
+    },
+    {
+      "type": "color",
+      "id": "tab_active_fg",
+      "label": "Active tab text color",
+      "default": "#ffffff"
+    },
+    {
+      "type": "header",
+      "content": "Slider Arrows (Mobile)"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_arrows_mobile",
+      "label": "Show arrows on mobile",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "show_arrows_desktop",
+      "label": "Also show arrows on desktop",
+      "default": false
+    },
+    {
+      "type": "range",
+      "id": "arrow_size",
+      "label": "Arrow size",
+      "min": 24,
+      "max": 44,
+      "step": 2,
+      "default": 32,
+      "unit": "px"
+    },
+    {
+      "type": "range",
+      "id": "arrow_offset_x",
+      "label": "Arrow distance from edge",
+      "min": 0,
+      "max": 20,
+      "step": 1,
+      "default": 0,
+      "unit": "px"
+    },
+    {
+      "type": "range",
+      "id": "arrow_tab_gap",
+      "label": "Arrow to tab gap",
+      "min": 0,
+      "max": 20,
+      "step": 1,
+      "default": 6,
+      "unit": "px"
+    },
+    {
+      "type": "range",
+      "id": "arrow_radius",
+      "label": "Arrow border radius",
+      "min": 0,
+      "max": 50,
+      "step": 1,
+      "default": 50,
+      "unit": "px"
+    },
+    {
+      "type": "color",
+      "id": "arrow_bg",
+      "label": "Arrow background",
+      "default": "#333333"
+    },
+    {
+      "type": "color",
+      "id": "arrow_hover_bg",
+      "label": "Arrow hover background",
+      "default": "#111111"
+    },
+{
+      "type": "color",
+      "id": "arrow_fg",
+      "label": "Arrow icon color",
+      "default": "#ffffff"
+    },
+    {
+      "type": "header",
+      "content": "Product Card"
+    },
+    {
+      "type": "paragraph",
+      "content": "Card colors, sizes and typography are shared with \"You may also like\" and edited under Theme Settings > Product Card."
+    },
+    {
+      "type": "select",
+      "id": "card_columns",
+      "label": "Products per row (desktop)",
+      "options": [
+        {
+          "value": "auto",
+          "label": "Auto (theme default)"
+        },
+        {
+          "value": "2",
+          "label": "2 per row"
+        },
+        {
+          "value": "3",
+          "label": "3 per row"
+        },
+        {
+          "value": "4",
+          "label": "4 per row"
+        },
+        {
+          "value": "5",
+          "label": "5 per row"
+        }
+      ],
+      "default": "auto"
+    }
+  ],
+  "blocks": [
+    {
+      "type": "product-tab",
+      "name": "Product Tab",
+      "settings": [
+        {
+          "type": "text",
+          "id": "tab_title",
+          "label": "Tab Title",
+          "default": "Best Sellers"
+        },
+        {
+          "type": "select",
+          "id": "tab_icon",
+          "label": "Tab Icon",
+          "options": [
+            {
+              "value": "star",
+              "label": "Star (Best Sellers)"
+            },
+            {
+              "value": "sparkles",
+              "label": "Sparkles (New Arrivals)"
+            },
+            {
+              "value": "fire",
+              "label": "Fire (Hot / Trending)"
+            },
+            {
+              "value": "tag",
+              "label": "Tag (Sale / Discount)"
+            },
+            {
+              "value": "grid",
+              "label": "Grid (All Products)"
+            },
+            {
+              "value": "heart",
+              "label": "Heart (Favorites)"
+            },
+            {
+              "value": "gift",
+              "label": "Gift (Special)"
+            },
+            {
+              "value": "zap",
+              "label": "Zap (Flash Sale)"
+            },
+            {
+              "value": "package",
+              "label": "Package (Bundle)"
+            },
+            {
+              "value": "crown",
+              "label": "Crown (Premium)"
+            }
+          ],
+          "default": "star"
+        },
+        {
+          "type": "collection",
+          "id": "collection",
+          "label": "Collection"
+        },
+        {
+          "type": "range",
+          "id": "products_limit",
+          "label": "Number of Products",
+          "min": 4,
+          "max": 20,
+          "step": 1,
+          "default": 8
+        }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "Products Tabs",
+      "blocks": {
+        "best-sellers": {
+          "type": "product-tab",
+          "settings": {
+            "tab_title": "Best Sellers",
+            "tab_icon": "star",
+            "products_limit": 8
+          }
+        },
+        "all-products": {
+          "type": "product-tab",
+          "settings": {
+            "tab_title": "All Products",
+            "tab_icon": "grid",
+            "products_limit": 8
+          }
+        }
+      },
+      "block_order": ["best-sellers", "all-products"]
+    }
+  ]
+}
+{% endschema %}

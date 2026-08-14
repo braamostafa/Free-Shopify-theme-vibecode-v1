@@ -1,0 +1,536 @@
+{% liquid
+  assign section_id = section.id
+  assign autoplay = section.settings.autoplay
+  assign autoplay_speed = section.settings.autoplay_speed | times: 1000
+%}
+
+<hero-slider
+  id="HeroSlider-{{ section_id }}"
+  class="hero-slider"
+  data-autoplay="{{ autoplay }}"
+  data-autoplay-speed="{{ autoplay_speed }}"
+>
+  <div class="hero-slider__container">
+    <div class="hero-slider__slides-wrapper">
+      {% for block in section.blocks %}
+        <div
+          class="hero-slider__slide-item{% if forloop.first %} is-active{% endif %}"
+          data-slide-index="{{ forloop.index0 }}"
+          {{ block.shopify_attributes }}
+        >
+          <div class="hero-slider__media">
+            {% if block.settings.image != blank %}
+              {{
+                block.settings.image
+                | image_url: width: 1920
+                | image_tag:
+                  loading: 'lazy',
+                  class: 'hero-slider__image',
+                  widths: '750, 1080, 1296, 1512, 1728, 1920',
+                  sizes: '100vw'
+              }}
+            {% else %}
+              {{ 'lifestyle-1' | placeholder_svg_tag: 'hero-slider__image' }}
+            {% endif %}
+            <div class="hero-slider__overlay"></div>
+          </div>
+
+          <div class="hero-slider__content">
+            {% if block.settings.description != blank %}
+              <p class="hero-slider__description">{{ block.settings.description }}</p>
+            {% endif %}
+
+            {% if block.settings.button_label != blank %}
+              <a
+                href="{{ block.settings.button_link | default: '#' }}"
+                class="hero-slider__button button"
+              >
+                <span class="hero-slider__button-text">{{ block.settings.button_label }}</span>
+                <span class="hero-slider__button-icon" aria-hidden="true">
+                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                    <path d="M4 10H16M16 10L11 5M16 10L11 15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </span>
+              </a>
+            {% endif %}
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+
+    {% if section.blocks.size > 1 %}
+      <button
+        type="button"
+        class="hero-slider__arrow hero-slider__arrow--prev"
+        data-prev
+        aria-label="{{ 'accessibility.previous' | t }}"
+      >
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+          <path d="M15 18L9 12L15 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+
+      <button
+        type="button"
+        class="hero-slider__arrow hero-slider__arrow--next"
+        data-next
+        aria-label="{{ 'accessibility.next' | t }}"
+      >
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+          <path d="M9 18L15 12L9 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+
+      <div class="hero-slider__navigation">
+        <div class="hero-slider__progress">
+          <div class="hero-slider__progress-bar" data-progress></div>
+        </div>
+        <div class="hero-slider__counter">
+          <span data-current>1</span>
+          <span class="hero-slider__counter-divider">/</span>
+          <span data-total>{{ section.blocks.size }}</span>
+        </div>
+      </div>
+    {% endif %}
+  </div>
+</hero-slider>
+
+<script src="{{ 'hero-slider.js' | asset_url }}" type="module" fetchpriority="low"></script>
+
+{% stylesheet %}
+  .hero-slider {
+    position: relative;
+    width: 100%;
+    background-color: rgb(var(--color-background));
+  }
+
+  .hero-slider__container {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .hero-slider__slides-wrapper {
+    position: relative;
+    width: 100%;
+  }
+
+  @media screen and (min-width: 750px) {
+    .hero-slider__container {
+      min-height: 85svh;
+    }
+
+    .hero-slider__slides-wrapper {
+      position: absolute;
+      inset: 0;
+      height: 100%;
+    }
+  }
+
+  .hero-slider__slide-item {
+    display: none;
+    position: relative;
+    width: 100%;
+  }
+
+  .hero-slider__slide-item.is-active {
+    display: flex;
+    flex-direction: column;
+  }
+
+  @media screen and (min-width: 750px) {
+    .hero-slider__slide-item {
+      display: flex;
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.8s ease;
+      align-items: flex-end;
+      justify-content: center;
+      padding: var(--padding-xl);
+      padding-bottom: 45px;
+      padding-block-start: calc(var(--header-group-height, 0px) + var(--padding-xl));
+    }
+
+    .hero-slider__slide-item.is-active {
+      opacity: 1;
+      visibility: visible;
+      z-index: 2;
+    }
+  }
+
+  .hero-slider__media {
+    position: relative;
+    width: 100%;
+    height: 48svh;
+    overflow: hidden;
+  }
+
+  @media screen and (min-width: 750px) {
+    .hero-slider__media {
+      position: absolute;
+      inset: 0;
+      height: 100%;
+      z-index: 1;
+    }
+  }
+
+  .hero-slider__image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+  }
+
+  .hero-slider__overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      to bottom,
+      rgb(0 0 0 / 0.1) 0%,
+      rgb(0 0 0 / 0.3) 50%,
+      rgb(0 0 0 / 0.6) 100%
+    );
+    pointer-events: none;
+    z-index: 2;
+  }
+
+  @media screen and (max-width: 749px) {
+    .hero-slider__overlay {
+      display: none;
+    }
+  }
+
+  .hero-slider__content {
+    position: relative;
+    z-index: 3;
+    max-width: 600px;
+    margin: -20px var(--page-margin) var(--padding-xl);
+    padding: var(--padding-xl);
+    background: linear-gradient(
+      to bottom,
+      rgb(var(--color-background-rgb) / 0.95) 0%,
+      rgb(var(--color-background-rgb)) 100%
+    );
+    border-radius: var(--style-border-radius-lg);
+    box-shadow: 0 -4px 20px rgba(255, 255, 255, 0.2), 0 10px 30px rgba(255, 255, 255, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  @media screen and (min-width: 750px) {
+    .hero-slider__content {
+      margin: 0 auto;
+      padding: 0;
+      background: transparent;
+      box-shadow: none;
+      border: none;
+      text-align: center;
+      align-items: center;
+    }
+  }
+
+  .hero-slider__subtitle {
+    display: inline-block;
+    font-size: var(--font-size--xs);
+    font-weight: 600;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: rgb(var(--color-foreground-rgb) / 0.7);
+    margin-block-end: var(--margin-sm);
+  }
+
+  @media screen and (min-width: 750px) {
+    .hero-slider__subtitle {
+      color: rgb(255 255 255 / 0.85);
+    }
+  }
+
+  .hero-slider__heading {
+    font-size: clamp(1.75rem, 5vw, 3.5rem);
+    font-weight: 700;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    margin-block-end: var(--margin-md);
+  }
+
+  @media screen and (min-width: 750px) {
+    .hero-slider__heading {
+      color: rgb(255 255 255);
+      text-shadow: 0 2px 20px rgb(0 0 0 / 0.3);
+    }
+  }
+
+  .hero-slider__description {
+    font-size: var(--font-size--md);
+    line-height: 1.6;
+    color: rgb(var(--color-foreground-rgb) / 0.85);
+    margin-block-end: var(--margin-lg);
+    max-width: 480px;
+  }
+
+  @media screen and (max-width: 749px) {
+    .hero-slider__description {
+      text-align: center;
+    }
+  }
+
+  @media screen and (min-width: 750px) {
+    .hero-slider__description {
+      text-align: center;
+      margin-inline: auto;
+      color: rgb(255 255 255 / 0.95);
+      text-shadow: 0 1px 10px rgb(0 0 0 / 0.5);
+    }
+  }
+
+  .hero-slider__button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--gap-sm);
+    padding: var(--padding-lg) var(--padding-2xl);
+    font-size: var(--font-size--md);
+    font-weight: 600;
+    text-decoration: none;
+    border-radius: var(--style-border-radius-buttons-primary);
+    transition: transform 0.3s var(--ease-out-cubic), box-shadow 0.3s ease;
+    cursor: pointer;
+  }
+
+  @media screen and (max-width: 749px) {
+    .hero-slider__button {
+      margin-inline: auto;
+    }
+  }
+
+  .hero-slider__button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 30px rgb(var(--color-primary-button-background) / 0.3);
+  }
+
+  .hero-slider__button-icon {
+    display: flex;
+    transition: transform 0.3s ease;
+  }
+
+  .hero-slider__button:hover .hero-slider__button-icon {
+    transform: translateX(4px);
+  }
+
+  .hero-slider__navigation {
+    display: none !important;
+  }
+
+  .hero-slider__progress {
+    width: 60px;
+    height: 3px;
+    background: rgb(var(--color-foreground-rgb) / 0.1);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .hero-slider__progress-bar {
+    height: 100%;
+    width: 0%;
+    background: var(--color-foreground);
+    border-radius: 2px;
+    transition: width 0.3s ease;
+  }
+
+  .hero-slider__arrow {
+    position: absolute;
+    top: 24svh;
+    transform: translateY(-50%);
+    z-index: 10;
+    width: 38px;
+    height: 38px;
+    padding: 0;
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    color: #ffffff;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.3s ease, border-color 0.3s ease, transform 0.3s ease;
+  }
+
+  .hero-slider__arrow--prev {
+    left: 12px;
+  }
+
+  .hero-slider__arrow--next {
+    right: 12px;
+  }
+
+  @media screen and (min-width: 750px) {
+    .hero-slider__arrow {
+      top: 50%;
+      width: 50px;
+      height: 50px;
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+    }
+
+    .hero-slider__arrow--prev {
+      left: max(var(--page-margin), 24px);
+    }
+
+    .hero-slider__arrow--next {
+      right: max(var(--page-margin), 24px);
+    }
+
+    .hero-slider__arrow:hover {
+      background: #ffffff;
+      color: #000000;
+      border-color: #ffffff;
+      transform: translateY(-50%) scale(1.1);
+    }
+  }
+
+  .hero-slider__arrow:hover {
+    background: rgb(var(--color-foreground-rgb) / 0.05);
+    border-color: rgb(var(--color-foreground-rgb) / 0.3);
+  }
+
+  .hero-slider__arrow svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .hero-slider__counter {
+    font-size: var(--font-size--sm);
+    font-weight: 600;
+    color: rgb(var(--color-foreground-rgb) / 0.6);
+    min-width: 50px;
+    text-align: center;
+  }
+
+  .hero-slider__counter-divider {
+    margin-inline: var(--gap-2xs);
+    opacity: 0.4;
+  }
+
+  .hero-slider__dots {
+    position: absolute;
+    bottom: var(--padding-xl);
+    right: max(var(--page-margin), 5vw);
+    z-index: 10;
+    display: flex;
+    gap: var(--gap-xs);
+  }
+
+  @media screen and (max-width: 749px) {
+    .hero-slider__dots {
+      display: none;
+    }
+  }
+
+  .hero-slider__dot {
+    width: 12px;
+    height: 12px;
+    padding: 0;
+    background: rgb(255 255 255 / 0.3);
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.3s ease;
+  }
+
+  .hero-slider__dot:hover {
+    background: rgb(255 255 255 / 0.5);
+  }
+
+  .hero-slider__dot.is-active {
+    background: rgb(255 255 255);
+    transform: scale(1.2);
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "Hero Slider",
+  "tag": "section",
+  "class": "hero-slider-section",
+  "blocks": [
+    {
+      "type": "slide",
+      "name": "سلايدر منفصل (Slide)",
+      "settings": [
+        {
+          "type": "image_picker",
+          "id": "image",
+          "label": "صورة السلايد (Slide Image)"
+        },
+        {
+          "type": "textarea",
+          "id": "description",
+          "label": "وصف السلايد (Description)",
+          "default": "استكشف مجموعتنا المميزة المصممة خصيصاً لك بأعلى جودة وأفضل الأسعار."
+        },
+        {
+          "type": "text",
+          "id": "button_label",
+          "label": "نص الزر (Button Label)",
+          "default": "تسوق الآن"
+        },
+        {
+          "type": "url",
+          "id": "button_link",
+          "label": "رابط الزر (Button Link)"
+        }
+      ]
+    }
+  ],
+  "settings": [
+    {
+      "type": "checkbox",
+      "id": "autoplay",
+      "label": "Auto-rotate slides",
+      "default": true
+    },
+    {
+      "type": "range",
+      "id": "autoplay_speed",
+      "label": "Change slides every",
+      "min": 3,
+      "max": 10,
+      "step": 1,
+      "unit": "s",
+      "default": 5
+    }
+  ],
+  "presets": [
+    {
+      "name": "Hero Slider",
+      "category": "Banners",
+      "blocks": [
+        {
+          "type": "slide",
+          "settings": {
+            "description": "اكتشف أحدث صيحات الموضة والمنتجات الأكثر مبيعاً.",
+            "button_label": "تصفح التشكيلة"
+          }
+        },
+        {
+          "type": "slide",
+          "settings": {
+            "description": "استكشف المجموعات المفضل لدى عملائنا بخصومات حصرياً.",
+            "button_label": "عرض المنتجات"
+          }
+        }
+      ]
+    }
+  ]
+}
+{% endschema %}

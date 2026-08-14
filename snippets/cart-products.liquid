@@ -57,20 +57,29 @@
   "
 >
   {% if cart.empty? or force_empty %}
-    {%- if shop.customer_accounts_enabled and customer == null -%}
-      <p>
-        {{ 'actions.log_in_html' | t: link: routes.account_login_url }}
-      </p>
-    {%- endif -%}
-
-    <a
-      class="button cart-items__empty-button"
-      href="{{ settings.empty_cart_button_link | default: routes.all_products_collection_url }}"
-    >
-      <span class="button-text">
-        {{ 'actions.continue_shopping' | t }}
+    <div class="cart-items__empty-state">
+      <span
+        class="cart-items__empty-icon"
+        aria-hidden="true"
+      >
+        {{ 'icon-cart.svg' | inline_asset_content }}
       </span>
-    </a>
+
+      {%- if shop.customer_accounts_enabled and customer == null -%}
+        <p class="cart-items__empty-login">
+          {{ 'actions.log_in_html' | t: link: routes.account_login_url }}
+        </p>
+      {%- endif -%}
+
+      <a
+        class="button cart-items__empty-button"
+        href="{{ settings.empty_cart_button_link | default: routes.all_products_collection_url }}"
+      >
+        <span class="button-text">
+          {{ 'actions.continue_shopping' | t }}
+        </span>
+      </a>
+    </div>
   {%- else -%}
     <span
       class="visually-hidden"
@@ -726,8 +735,41 @@
     height: auto;
   }
 
+  .cart-items__empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--gap-md);
+    padding: var(--padding-lg);
+    max-width: 24rem;
+    margin-inline: auto;
+  }
+
+  .cart-items__empty-icon {
+    width: 6.5rem;
+    height: 6.5rem;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: rgb(var(--color-foreground-rgb) / 0.05);
+    color: rgb(var(--color-foreground-rgb) / 0.6);
+    margin-block-end: var(--margin-2xs);
+
+    & svg {
+      width: 2.5rem;
+      height: 2.5rem;
+    }
+  }
+
+  .cart-items__empty-login {
+    margin: 0;
+    color: var(--color-foreground-subdued);
+    font-size: var(--font-size--sm);
+  }
+
   .cart-items__empty-button {
-    margin-top: var(--margin-md);
+    margin-top: var(--margin-sm);
     margin-inline: auto;
     padding-inline: var(--padding-4xl);
     padding-block: var(--padding-lg);

@@ -1,0 +1,181 @@
+{%- doc -%}
+  Data-only block: assigns an icon to a header menu link by its exact title.
+
+  The icon is picked up by blocks/_header-menu.liquid (desktop menu),
+  which matches each top-level link against blocks of this type.
+{%- enddoc -%}
+
+{% schema %}
+{
+  "name": "أيقونة لينك المنيو",
+  "tag": null,
+  "settings": [
+    {
+      "type": "text",
+      "id": "link_title",
+      "label": "عنوان اللينك بالظبط زي ما هو في المنيو",
+      "info": "اكتب اسم اللينك زي ما بيظهر في قائمة التنقل (Navigation) — عشان الأيقونة تظهر جنبه في الهيدر على الكمبيوتر"
+    },
+    {
+      "type": "select",
+      "id": "icon",
+      "label": "الأيقونة",
+      "default": "none",
+      "options": [
+        {
+          "value": "none",
+          "label": "بدون"
+        },
+        {
+          "value": "box",
+          "label": "علبة – منتجات"
+        },
+        {
+          "value": "truck",
+          "label": "شحن"
+        },
+        {
+          "value": "return",
+          "label": "إرجاع"
+        },
+        {
+          "value": "price_tag",
+          "label": "تخفيضات – سعر"
+        },
+        {
+          "value": "heart",
+          "label": "قلب"
+        },
+        {
+          "value": "star",
+          "label": "نجمة"
+        },
+        {
+          "value": "eye",
+          "label": "عين"
+        },
+        {
+          "value": "fire",
+          "label": "نار – الأكثر مبيعاً"
+        },
+        {
+          "value": "lightning_bolt",
+          "label": "صاعقة"
+        },
+        {
+          "value": "leaf",
+          "label": "ورقة"
+        },
+        {
+          "value": "plant",
+          "label": "نبتة"
+        },
+        {
+          "value": "bottle",
+          "label": "زجاجة"
+        },
+        {
+          "value": "perfume",
+          "label": "عطر"
+        },
+        {
+          "value": "lipstick",
+          "label": "أحمر شفاه"
+        },
+        {
+          "value": "pants",
+          "label": "بنطلون"
+        },
+        {
+          "value": "shirt",
+          "label": "قميص"
+        },
+        {
+          "value": "shoe",
+          "label": "حذاء"
+        },
+        {
+          "value": "serving_dish",
+          "label": "أطباق"
+        },
+        {
+          "value": "carrot",
+          "label": "خضروات"
+        },
+        {
+          "value": "dairy",
+          "label": "ألبان"
+        },
+        {
+          "value": "leather",
+          "label": "جلد"
+        },
+        {
+          "value": "snowflake",
+          "label": "ثلج"
+        },
+        {
+          "value": "map_pin",
+          "label": "موقع – خريطة"
+        },
+        {
+          "value": "chat_bubble",
+          "label": "تواصل"
+        },
+        {
+          "value": "lock",
+          "label": "قفل"
+        },
+        {
+          "value": "plane",
+          "label": "طائرة – سفر"
+        },
+        {
+          "value": "recycle",
+          "label": "إعادة تدوير"
+        },
+        {
+          "value": "stopwatch",
+          "label": "ساعة إيقاف"
+        },
+        {
+          "value": "question_mark",
+          "label": "استفسار"
+        },
+        {
+          "value": "silhouette",
+          "label": "شخص – حسابي"
+        },
+        {
+          "value": "clipboard",
+          "label": "مستندات"
+        },
+        {
+          "value": "ruler",
+          "label": "مسطرة – مقاسات"
+        },
+        {
+          "value": "washing",
+          "label": "غسيل"
+        },
+        {
+          "value": "iron",
+          "label": "مكواة"
+        },
+        {
+          "value": "dryer",
+          "label": "مجفف"
+        },
+        {
+          "value": "paw_print",
+          "label": "حيوانات أليفة"
+        },
+        {
+          "value": "pepper",
+          "label": "توابل"
+        }
+      ]
+    }
+  ]
+}
+{% endschema %}

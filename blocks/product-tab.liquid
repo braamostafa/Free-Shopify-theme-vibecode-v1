@@ -1,0 +1,80 @@
+{%- comment -%}
+  Block: Product Tab
+  يحمل إعدادات التاب الواحد (العنوان + الكوليكشن + الأيقونة)
+{%- endcomment -%}
+
+{% schema %}
+{
+  "name": "Product Tab",
+  "settings": [
+    {
+      "type": "text",
+      "id": "tab_title",
+      "label": "Tab Title",
+      "default": "Best Sellers"
+    },
+    {
+      "type": "select",
+      "id": "tab_icon",
+      "label": "Tab Icon",
+      "options": [
+        {
+          "value": "star",
+          "label": "Star (Best Sellers)"
+        },
+        {
+          "value": "sparkles",
+          "label": "Sparkles (New Arrivals)"
+        },
+        {
+          "value": "fire",
+          "label": "Fire (Hot / Trending)"
+        },
+        {
+          "value": "tag",
+          "label": "Tag (Sale / Discount)"
+        },
+        {
+          "value": "grid",
+          "label": "Grid (All Products)"
+        },
+        {
+          "value": "heart",
+          "label": "Heart (Favorites)"
+        },
+        {
+          "value": "gift",
+          "label": "Gift (Special)"
+        },
+        {
+          "value": "zap",
+          "label": "Zap (Flash Sale)"
+        },
+        {
+          "value": "package",
+          "label": "Package (Bundle)"
+        },
+        {
+          "value": "crown",
+          "label": "Crown (Premium)"
+        }
+      ],
+      "default": "star"
+    },
+    {
+      "type": "collection",
+      "id": "collection",
+      "label": "Collection"
+    },
+    {
+      "type": "range",
+      "id": "products_limit",
+      "label": "Number of Products",
+      "min": 4,
+      "max": 20,
+      "step": 1,
+      "default": 8
+    }
+  ]
+}
+{% endschema %}

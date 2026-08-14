@@ -40,16 +40,29 @@
     right: 0;
   }
 
+  /* Promote the drawer to its own compositor layer while animating so the
+     slide-in/out never triggers full-page paint work inside the click task
+     (INP). Released once the animation class is removed. */
+  .theme-drawer__dialog[open] {
+    will-change: auto;
+  }
+
+  .theme-drawer__dialog--opening,
+  .theme-drawer__dialog--opening-inline-start,
+  .theme-drawer__dialog--closing {
+    will-change: transform;
+  }
+
   .theme-drawer__dialog--opening {
-    animation: drawer-slide-in var(--animation-speed) var(--animation-timing-fade-in);
+    animation: drawer-slide-in 0.3s var(--animation-timing-fade-in);
   }
 
   .theme-drawer__dialog--opening-inline-start {
-    animation: drawer-slide-in-inline-start var(--animation-speed) var(--animation-timing-fade-in);
+    animation: drawer-slide-in-inline-start 0.3s var(--animation-timing-fade-in);
   }
 
   .theme-drawer__dialog--closing {
-    animation: drawer-slide-out var(--animation-speed) var(--animation-timing-fade-out) forwards;
+    animation: drawer-slide-out 0.25s var(--animation-timing-fade-out) forwards;
   }
 
   .theme-drawer__dialog-instant {
@@ -58,19 +71,19 @@
 
   @keyframes drawer-slide-in {
     from {
-      right: calc(-1 * var(--theme-drawer-width, var(--sidebar-width)));
+      transform: translateX(100%);
     }
   }
 
   @keyframes drawer-slide-in-inline-start {
     from {
-      right: calc(var(--theme-drawer-width, var(--sidebar-width)) / 2);
+      transform: translateX(50%);
     }
   }
 
   @keyframes drawer-slide-out {
     to {
-      right: calc(-1 * var(--theme-drawer-width, var(--sidebar-width)));
+      transform: translateX(100%);
     }
   }
 

@@ -1,0 +1,292 @@
+{% liquid
+  assign section_width = section.settings.section_width
+  assign items_per_row = section.settings.items_per_row
+%}
+
+<div class="trust-usps section section--{{ section_width }}" style="padding-top: {{ section.settings.padding_top }}px; padding-bottom: {{ section.settings.padding_bottom }}px; background-color: {{ section.settings.background_color }};">
+  {% if section.settings.title != blank %}
+    <div class="trust-usps__header">
+      <h2 class="trust-usps__title">{{ section.settings.title }}</h2>
+      {% if section.settings.subtitle != blank %}
+        <p class="trust-usps__subtitle">{{ section.settings.subtitle }}</p>
+      {% endif %}
+    </div>
+  {% endif %}
+
+  <div class="trust-usps__grid" data-items="{{ items_per_row }}">
+    {% for block in section.blocks %}
+      <div class="trust-usps__item" {{ block.shopify_attributes }}>
+        <div class="trust-usps__icon">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" focusable="false">
+            {%- render 'icon', icon: block.settings.icon -%}
+          </svg>
+        </div>
+        <div class="trust-usps__content">
+          <span class="trust-usps__label">{{ block.settings.label }}</span>
+          {% if block.settings.description != blank %}
+            <span class="trust-usps__description">{{ block.settings.description }}</span>
+          {% endif %}
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+</div>
+
+<style>
+  .trust-usps__header {
+    text-align: center;
+    margin-block-end: 24px;
+  }
+
+  .trust-usps__title {
+    margin: 0;
+  }
+
+  .trust-usps__subtitle {
+    margin: 8px 0 0;
+    color: rgb(var(--color-foreground-rgb) / 0.6);
+  }
+
+  .trust-usps__grid {
+    display: grid;
+    gap: 12px;
+  }
+
+  .trust-usps__grid[data-items='4'] {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  .trust-usps__grid[data-items='2'] {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .trust-usps__item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    text-align: center;
+    padding: 16px 12px;
+  }
+
+  .trust-usps__icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+  }
+
+  .trust-usps__icon svg {
+    width: 32px;
+    height: 32px;
+    color: #000;
+  }
+
+  .trust-usps__content {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .trust-usps__label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    line-height: 1.3;
+  }
+
+  .trust-usps__description {
+    font-size: 0.75rem;
+    line-height: 1.3;
+    color: rgb(var(--color-foreground-rgb) / 0.55);
+  }
+
+  @media screen and (max-width: 749px) {
+    .trust-usps__grid[data-items='4'] {
+      grid-template-columns: repeat(4, 1fr);
+    }
+
+    .trust-usps__item {
+      padding: 12px 4px;
+      gap: 6px;
+    }
+
+    .trust-usps__label {
+      font-size: 0.7rem;
+    }
+
+    .trust-usps__description {
+      display: none;
+    }
+
+    .trust-usps__icon {
+      width: 36px;
+      height: 36px;
+    }
+
+    .trust-usps__icon svg {
+      width: 28px;
+      height: 28px;
+    }
+  }
+</style>
+
+{% schema %}
+{
+  "name": "Trust / USP Strip",
+  "tag": "section",
+  "settings": [
+    {
+      "type": "text",
+      "id": "title",
+      "label": "Title"
+    },
+    {
+      "type": "text",
+      "id": "subtitle",
+      "label": "Subtitle"
+    },
+    {
+      "type": "select",
+      "id": "section_width",
+      "label": "Section width",
+      "options": [
+        {
+          "value": "page-width",
+          "label": "Page width"
+        },
+        {
+          "value": "full-width",
+          "label": "Full width"
+        },
+        {
+          "value": "content-center-aligned",
+          "label": "Content center aligned"
+        }
+      ],
+      "default": "page-width"
+    },
+    {
+      "type": "color",
+      "id": "background_color",
+      "label": "Background color",
+      "default": "#f5f5f5"
+    },
+    {
+      "type": "select",
+      "id": "items_per_row",
+      "label": "Items per row",
+      "options": [
+        {
+          "value": "4",
+          "label": "4"
+        },
+        {
+          "value": "2",
+          "label": "2"
+        }
+      ],
+      "default": "4"
+    },
+    {
+      "type": "range",
+      "id": "padding_top",
+      "label": "Padding top",
+      "min": 0,
+      "max": 100,
+      "step": 4,
+      "unit": "px",
+      "default": 20
+    },
+    {
+      "type": "range",
+      "id": "padding_bottom",
+      "label": "Padding bottom",
+      "min": 0,
+      "max": 100,
+      "step": 4,
+      "unit": "px",
+      "default": 20
+    }
+  ],
+  "blocks": [
+    {
+      "type": "usp",
+      "name": "USP item",
+      "limit": 4,
+      "settings": [
+        {
+          "type": "select",
+          "id": "icon",
+          "label": "Icon",
+          "options": [
+            {
+              "value": "truck",
+              "label": "Truck (Free Shipping)"
+            },
+            {
+              "value": "lock",
+              "label": "Lock (Secure Checkout)"
+            },
+            {
+              "value": "return",
+              "label": "Return arrow (Easy Returns)"
+            },
+            {
+              "value": "chat_bubble",
+              "label": "Chat bubble (24/7 Support)"
+            }
+          ],
+          "default": "truck"
+        },
+        {
+          "type": "text",
+          "id": "label",
+          "label": "Label",
+          "default": "Free Shipping"
+        },
+        {
+          "type": "text",
+          "id": "description",
+          "label": "Description"
+        }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "Trust / USP Strip",
+      "blocks": [
+        {
+          "type": "usp",
+          "settings": {
+            "icon": "truck",
+            "label": "Free Shipping"
+          }
+        },
+        {
+          "type": "usp",
+          "settings": {
+            "icon": "lock",
+            "label": "Secure Checkout"
+          }
+        },
+        {
+          "type": "usp",
+          "settings": {
+            "icon": "return",
+            "label": "Easy Returns"
+          }
+        },
+        {
+          "type": "usp",
+          "settings": {
+            "icon": "chat_bubble",
+            "label": "24/7 Support"
+          }
+        }
+      ]
+    }
+  ]
+}
+{% endschema %}

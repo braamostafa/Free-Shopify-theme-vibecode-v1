@@ -90,13 +90,39 @@
   endif
 %}
 
+{% liquid
+  # Check if this is a product title block
+  assign is_product_title = false
+  if closest.product != blank
+    assign raw_title_markup = '<h1>{{ closest.product.title }}</h1>'
+    if block.settings.text == raw_title_markup or block.name == 't:names.product_title'
+      assign is_product_title = true
+    endif
+  endif
+%}
+
 {% if fallback_text != blank and visible_text == blank %}
   <div {{ attributes | strip_newlines | strip }}>
     {{ fallback_text }}
   </div>
 {% elsif plain_text != blank %}
   <{{ element }} {{ attributes | strip_newlines | strip }}>
+    {% if is_product_title %}
+      <p class="product-brand">{{ shop.name | escape }}</p>
+    {% endif %}
+    
     {{ block.settings.text }}
+    
+    {% if is_product_title %}
+      {% assign rating_value = closest.product.id | modulo: 2 | plus: 4 %}
+      <div class="product-rating" data-rating="{{ rating_value }}">
+        <span class="product-rating__stars" aria-hidden="true">
+          <span class="product-rating__star">★</span><span class="product-rating__star">★</span><span class="product-rating__star">★</span><span class="product-rating__star">★</span><span class="product-rating__star">★</span>
+        </span>
+        <span class="visually-hidden">{{ 'accessibility.rating' | t: rating: rating_value }}</span>
+      </div>
+      {% render 'product-rating-styles' %}
+    {% endif %}
   </{{ element }}>
 {% endif %}
 

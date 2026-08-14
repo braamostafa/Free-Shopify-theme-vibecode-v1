@@ -117,4 +117,6 @@
   </div>
 </product-card>
 
-{% render 'product-card-styles' %}
+{% unless product_card_render_styles == false %}
+  {% render 'product-card-styles' %}
+{% endunless %}

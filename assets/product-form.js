@@ -65,6 +65,14 @@ export class AddToCartComponent extends Component {
   }
 
   /**
+   * Sets the loading state.
+   */
+  setLoading(isLoading) {
+    this.refs.addToCartButton.classList.toggle('is-loading', isLoading);
+    this.refs.addToCartButton.setAttribute('aria-busy', String(isLoading));
+  }
+
+  /**
    * Handles the click event for the add to cart button.
    * @param {MouseEvent & {target: HTMLElement}} event - The click event.
    */
@@ -82,13 +90,8 @@ export class AddToCartComponent extends Component {
         return;
       }
     }
-    if (this.refs.addToCartButton.dataset.puppet !== 'true') {
-      const animationEnabled = this.dataset.addToCartAnimation === 'true';
-      if (animationEnabled && !event.target.closest('.quick-add-modal')) {
-        this.#animateFlyToCart();
-      }
-      this.animateAddToCart();
-    }
+    // We no longer trigger optimistic animation or fly-to-cart here.
+    // The loading spinner will run until fetch finishes, then animateAddToCart is called.
   }
 
   #preloadImage = () => {
@@ -98,32 +101,6 @@ export class AddToCartComponent extends Component {
 
     preloadImage(image);
   };
-
-  /**
-   * Animates the fly to cart animation.
-   */
-  #animateFlyToCart() {
-    const { addToCartButton } = this.refs;
-    const cartIcon = document.querySelector('.header-actions__cart-icon');
-
-    const image = this.dataset.productVariantMedia;
-
-    if (!cartIcon || !addToCartButton || !image) return;
-
-    const flyToCartElement = /** @type {FlyToCart} */ (document.createElement('fly-to-cart'));
-
-    let flyToCartClass = addToCartButton.classList.contains('quick-add__button')
-      ? 'fly-to-cart--quick'
-      : 'fly-to-cart--main';
-
-    flyToCartElement.classList.add(flyToCartClass);
-    flyToCartElement.style.setProperty('background-image', `url(${image})`);
-    flyToCartElement.style.setProperty('--start-opacity', '0');
-    flyToCartElement.source = addToCartButton;
-    flyToCartElement.destination = cartIcon;
-
-    document.body.appendChild(flyToCartElement);
-  }
 
   /**
    * Animates the add to cart button.
@@ -426,6 +403,11 @@ class ProductFormComponent extends Component {
       formData.set('quantity', overrideQuantity.toString());
     }
 
+    for (const container of allAddToCartContainers) {
+      container.disable();
+      if ('setLoading' in container) container.setLoading(true);
+    }
+
     const cartItemsComponents = document.querySelectorAll('cart-items-component');
     let cartItemComponentsSectionIds = [];
     cartItemsComponents.forEach((item) => {
@@ -560,6 +542,10 @@ class ProductFormComponent extends Component {
                 this.#updateCartQuantity(ajaxCart);
               }
 
+              for (const container of allAddToCartContainers) {
+                if ('animateAddToCart' in container) container.animateAddToCart();
+              }
+
               return ajaxCart;
             })
             .catch(deferredEventPromise.reject);
@@ -577,6 +563,11 @@ class ProductFormComponent extends Component {
         );
       })
       .finally(() => {
+        for (const container of allAddToCartContainers) {
+          if ('setLoading' in container) container.setLoading(false);
+          container.enable();
+        }
+
         if (event) {
           cartPerformance.measureFromEvent('add:user-action', event);
         }
@@ -600,6 +591,15 @@ class ProductFormComponent extends Component {
     }
 
     const totalQuantity = items.reduce((sum, item) => sum + item.quantity, 0);
+
+    const allAddToCartContainers = /** @type {NodeListOf<AddToCartComponent>} */ (
+      this.querySelectorAll('add-to-cart-component')
+    );
+    for (const container of allAddToCartContainers) {
+      container.disable();
+      if ('setLoading' in container) container.setLoading(true);
+    }
+
     const deferredEventPromise = CartLinesUpdateEvent.createPromise();
 
     this.dispatchEvent(
@@ -708,6 +708,9 @@ class ProductFormComponent extends Component {
           },
         });
         this.#updateCartQuantity(cart);
+        for (const container of allAddToCartContainers) {
+          if ('animateAddToCart' in container) container.animateAddToCart();
+        }
       })
       .catch((error) => {
         console.error(error);
@@ -719,6 +722,12 @@ class ProductFormComponent extends Component {
             code: 'SERVICE_UNAVAILABLE',
           })
         );
+      })
+      .finally(() => {
+        for (const container of allAddToCartContainers) {
+          if ('setLoading' in container) container.setLoading(false);
+          container.enable();
+        }
       });
   }
 

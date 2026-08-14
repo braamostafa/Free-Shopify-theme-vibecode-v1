@@ -599,6 +599,36 @@
     display: none;
   }
 
+  .quick-add-modal .add-to-cart-button {
+    background-color: #000000 !important;
+    color: #ffffff !important;
+    border: 1px solid #000000 !important;
+    border-radius: var(--style-border-radius-inputs, 8px) !important;
+    width: 100% !important;
+    flex: 1 0 100% !important;
+  }
+
+  .quick-add-modal .add-to-cart-button:hover {
+    background-color: #1a1a1a !important;
+    color: #ffffff !important;
+  }
+
+  .quick-add-modal shopify-accelerated-checkout {
+    width: 100% !important;
+    display: block !important;
+    flex: 1 0 100% !important;
+    margin-inline: auto !important;
+    --shopify-accelerated-checkout-button-background-color: #ffffff !important;
+    --shopify-accelerated-checkout-button-text-color: #000000 !important;
+    --shopify-accelerated-checkout-button-border-color: #000000 !important;
+    --shopify-accelerated-checkout-button-border-radius: var(--style-border-radius-inputs, 8px) !important;
+    --shopify-accelerated-checkout-button-block-size: 52px !important;
+  }
+
+  .quick-add-modal shopify-accelerated-checkout > * {
+    width: 100% !important;
+  }
+
   @keyframes fadeSlideIn {
     from {
       opacity: 0;

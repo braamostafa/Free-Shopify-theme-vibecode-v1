@@ -17,6 +17,7 @@
   assign show_compare_price = false
   if compare_at_price > price
     assign show_compare_price = true
+    assign discount_percentage = compare_at_price | minus: price | times: 100 | divided_by: compare_at_price
   endif
 
   if product_resource == blank
@@ -96,11 +97,17 @@
         <span class="price-item__group price-item--regular compare-at-price">
           <span class="visually-hidden">{{ 'content.price_regular' | t }}&nbsp;</span>
           {{- compare_at_price -}}
+          {% unless is_product_card %}
+            <span class="price-badge">-{{ discount_percentage }}%</span>
+          {% endunless %}
         </span>
       {% else %}
         <span class="price-item__group price-item--regular compare-at-price">
           <span class="visually-hidden">{{ 'content.price_regular' | t }}&nbsp;</span>
           {{- compare_at_price -}}
+          {% unless is_product_card %}
+            <span class="price-badge">-{{ discount_percentage }}%</span>
+          {% endunless %}
         </span>
         <span class="price-item__group price">
           <span class="visually-hidden">{{ 'content.price_sale' | t }}&nbsp;</span>

@@ -203,22 +203,23 @@ export class ProductCard extends ProductCardLink {
 
     this.addEventListener('click', this.navigateToProduct);
 
-    // Preload the next image on the slideshow to avoid white flashes on previewImage
+    // Synchronize which slide should rest on top (the first/featured image, or
+    // the image of a selected variant), then preload the next slide's image so
+    // the hover preview swaps without white flashes. Preload runs for every
+    // card (not only nested slideshows), because the card gallery previews the
+    // next image on hover on hover-capable devices.
     setTimeout(() => {
-      if (this.refs.slideshow?.isNested) {
-        this.#preloadNextPreviewImage();
-      }
+      this.#syncCardActiveSlide();
+      this.#observeRestingImage();
+      this.#preloadNextPreviewImage();
     });
   }
 
   disconnectedCallback() {
     super.disconnectedCallback();
     this.removeEventListener('click', this.navigateToProduct);
-  }
-
-  #preloadNextPreviewImage() {
-    const currentSlide = this.refs.slideshow?.slides?.[this.refs.slideshow?.current];
-    currentSlide?.nextElementSibling?.querySelector('img[loading="lazy"]')?.removeAttribute('loading');
+    this.#restingImageObserver?.disconnect();
+    this.#restingImageObserver = null;
   }
 
   /**
@@ -416,6 +417,8 @@ export class ProductCard extends ProductCardLink {
       return;
     }
 
+    this.#previewedSlides = [];
+
     const selectedImageId = this.variantPicker?.selectedOption.dataset.optionMediaId;
 
     if (slideshow && selectedImageId) {
@@ -428,6 +431,37 @@ export class ProductCard extends ProductCardLink {
       }
 
       slideshow.select({ id: selectedImageId }, undefined, { animate: false });
+    }
+
+    this.#syncCardActiveSlide();
+    this.#preloadRestingImage();
+    this.#preloadNextPreviewImage();
+  }
+
+  /**
+   * Marks the slide that should rest on top in the stacked hover layout.
+   * By default this is the first image in the gallery; when a swatch is
+   * selected it becomes that variant's image. This keeps the resting state
+   * deterministic even though the slideshow's IntersectionObserver may mark
+   * several stacked slides as "visible" simultaneously.
+   */
+  #syncCardActiveSlide() {
+    const { slideshow } = this.refs;
+    const slides =
+      (slideshow?.refs.slides ?? []).length > 0
+        ? slideshow.refs.slides
+        : [...(slideshow?.querySelectorAll('slideshow-slide') ?? [])];
+    if (!slides.length) return;
+
+    let active = null;
+    const selectedMediaId = this.variantPicker?.selectedOption?.dataset.optionMediaId;
+    if (selectedMediaId) {
+      active = slides.find((slide) => String(slide.getAttribute('slide-id')) === String(selectedMediaId));
+    }
+    active ??= slides.find((slide) => !slide.hasAttribute('hidden')) ?? slides[0];
+
+    for (const slide of slides) {
+      slide.toggleAttribute('data-card-active', slide === active);
     }
   }
 
@@ -448,6 +482,9 @@ export class ProductCard extends ProductCardLink {
   }
   /** @type {number | null} */
   #previousSlideIndex = null;
+
+  /** @type {{ element: HTMLElement, wasHidden: boolean }[]} */
+  #previewedSlides = [];
 
   /**
    * Handles the slideshow select event.
@@ -473,41 +510,231 @@ export class ProductCard extends ProductCardLink {
   }
 
   /**
-   * Previews the next image.
-   * @param {PointerEvent} event - The pointer event.
+   * Kicks the lazy loading of the slide's image so the hover crossfade never
+   * reveals an unloaded/blank container. Works even while the slide is still
+   * hidden (e.g. a variant-bound image with the `hidden` attribute).
+   * @param {Element | null | undefined} slide - The slide containing the image.
    */
-  previewImage(event) {
-    if (event.pointerType !== 'mouse') return;
+  #preloadSlideImage(slide) {
+    const image = slide?.querySelector('img[loading="lazy"]');
+    if (!(image instanceof HTMLImageElement)) return;
 
-    const { slideshow } = this.refs;
+    // Remove the lazy hint: browsers skip `loading="lazy"` images inside
+    // display:none/offscreen slides, which is exactly why the first hover
+    // showed an empty (white) container instead of the second image.
+    image.removeAttribute('loading');
 
-    if (!slideshow) return;
-
-    this.resetVariant.cancel();
-
-    if (this.#previousSlideIndex != null && this.#previousSlideIndex > 0) {
-      slideshow.select(this.#previousSlideIndex, undefined, { animate: false });
-    } else {
-      slideshow.next(undefined, { animate: false });
-      setTimeout(() => this.#preloadNextPreviewImage());
+    // Ask the browser to decode it so it is painted as soon as it is revealed.
+    if (typeof image.decode === 'function') {
+      image.decode().catch(() => {});
     }
   }
 
   /**
-   * Resets the image to the variant image.
+   * Kicks the lazy loading of the resting slide's image. The resting image
+   * relies on the browser's lazy-load evaluation, which skips images inside
+   * hidden/stacked slides and is only re-run on scroll events — leaving the
+   * first image white until a refresh. Removing the lazy hint forces it to
+   * fetch and decode on its own.
+   */
+  #preloadRestingImage() {
+    const slides = this.#getPreviewSlides();
+    const activeSlide = slides.find((slide) => slide.hasAttribute('data-card-active')) ?? slides[0];
+    if (activeSlide instanceof HTMLElement) {
+      this.#preloadSlideImage(activeSlide);
+    }
+  }
+
+  /** @type {IntersectionObserver | null} */
+  #restingImageObserver = null;
+
+  /**
+   * Ensures the resting image starts loading as soon as the card approaches
+   * the viewport, instead of waiting for the browser's (sometimes skipped)
+   * lazy-load re-evaluation. Cards already in or near the viewport are kicked
+   * immediately; the rest wait for an IntersectionObserver with a margin so
+   * the image is decoded by the time the user scrolls to it.
+   */
+  #observeRestingImage() {
+    const cardGallery = this.refs.cardGallery;
+    if (!(cardGallery instanceof HTMLElement)) return;
+
+    const kick = () => {
+      this.#restingImageObserver?.disconnect();
+      this.#restingImageObserver = null;
+      this.#preloadRestingImage();
+    };
+
+    const rect = cardGallery.getBoundingClientRect();
+    const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
+    if (rect.top < viewportHeight + 400 && rect.bottom > -400) {
+      kick();
+      return;
+    }
+
+    this.#restingImageObserver = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            kick();
+            break;
+          }
+        }
+      },
+      { rootMargin: '400px 0px' }
+    );
+    this.#restingImageObserver.observe(cardGallery);
+  }
+
+  /**
+   * Ensures the image that follows the resting slide (including hidden
+   * variant-bound images) is fetched and decoded ahead of the first hover.
+   */
+  #preloadNextPreviewImage() {
+    const nextSlide = this.#getNextPreviewSlide();
+    if (nextSlide instanceof HTMLElement) {
+      this.#preloadSlideImage(nextSlide);
+    }
+  }
+
+  /**
+   * All slides of the card gallery in DOM order (hidden variant slides
+   * included), so previews and preloads follow the gallery order regardless of
+   * the slideshow's internal scroll/visibility state.
+   * @returns {HTMLElement[]}
+   */
+  #getPreviewSlides() {
+    const slideshow = this.refs.slideshow;
+    if (slideshow && slideshow.refs.slides?.length) return slideshow.refs.slides;
+    return [...(this.refs.cardGallery?.querySelectorAll('slideshow-slide') ?? [])];
+  }
+
+  /**
+   * Finds the slide to preview on hover: the one that follows the resting
+   * slide in gallery order, including hidden variant slides, so that images
+   * attached to variants (e.g., colors) also show on hover. The resting slide
+   * is resolved from the slide marked `data-card-active` (the featured/first
+   * image, or the selected variant image) instead of `slideshow.current`,
+   * which can drift out of sync with the rendered DOM after prior previews.
+   * @returns {HTMLElement | null} The next slide element or null.
+   */
+  #getNextPreviewSlide() {
+    const allSlides = this.#getPreviewSlides();
+    if (allSlides.length < 2) return null;
+
+    const currentSlide =
+      allSlides.find((slide) => slide.hasAttribute('data-card-active')) ?? allSlides[0];
+
+    const currentIndex = allSlides.indexOf(currentSlide);
+
+    // No slide after the resting one (single image or resting on the last
+    // media): there is nothing to preview.
+    if (currentIndex < 0 || currentIndex >= allSlides.length - 1) return null;
+
+    return allSlides[currentIndex + 1] ?? null;
+  }
+
+  /**
+   * Previews the next image on hover without touching the slideshow's
+   * scroll position, `aria-hidden` state or IntersectionObserver tracking.
+   * The slide to show is marked with a `data-preview-hover` attribute and
+   * styled purely by CSS, so it can never leak into the resting state.
+   * @param {PointerEvent} event - The pointer event.
+   */
+  previewImage(event) {
+    const nextSlide = this.#getNextPreviewSlide();
+    if (!(nextSlide instanceof HTMLElement)) return;
+
+    this.resetVariant.cancel();
+
+    // Start the lazy image loading before the slide is revealed, then wait one
+    // frame so the browser can resolve/decode it. This turns the first hover
+    // into an animated crossfade instead of an empty (white) flash.
+    this.#preloadSlideImage(nextSlide);
+
+    this.#pendingPreview = nextSlide;
+    requestAnimationFrame(() => {
+      if (!this.isConnected || this.#pendingPreview !== nextSlide) return;
+      this.#pendingPreview = null;
+      this.#setPreviewSlide(nextSlide);
+    });
+
+    // Preload the slide after the previewed one (hidden variant slides can be
+    // right behind it) so consecutive hovers stay instant.
+    const allSlides = this.#getPreviewSlides();
+    const previewIndex = allSlides.indexOf(nextSlide);
+    if (previewIndex !== -1) {
+      this.#preloadSlideImage(allSlides[previewIndex + 1]);
+    }
+
+    // On touch devices pointerleave may never fire, so the preview would stay
+    // stuck forever. Clear it automatically after a brief delay so the card
+    // always returns to its first image.
+    if (!window.matchMedia('(hover: hover)').matches) {
+      clearTimeout(this.#touchPreviewTimer);
+      this.#touchPreviewTimer = setTimeout(() => this.#endPreview(), 1200);
+    }
+  }
+
+  /**
+   * The slide queued for hover preview but not yet revealed (waits one frame
+   * for the preloaded image to be decoded). Cleared by #endPreview.
+   * @type {HTMLElement | null}
+   */
+  #pendingPreview = null;
+
+  /**
+   * Timer that auto-clears the preview on touch devices where pointerleave
+   * never fires. Cleared on pointer leave and on next preview.
+   * @type {ReturnType<typeof setTimeout> | undefined}
+   */
+  #touchPreviewTimer = undefined;
+
+  /**
+   * Marks a slide for the hover preview: temporarily removes its `hidden`
+   * attribute if it is a variant image so it can render, and flags it with
+   * `data-preview-hover`. Also flags the card gallery with `data-previewing`
+   * so the CSS crossfade hides the resting slide for the preview duration.
+   * @param {HTMLElement} slide - The slide to preview.
+   */
+  #setPreviewSlide(slide) {
+    const wasHidden = slide.hasAttribute('hidden');
+    if (wasHidden) {
+      slide.removeAttribute('hidden');
+    }
+    slide.setAttribute('data-preview-hover', '');
+    this.#previewedSlides.push({ element: slide, wasHidden });
+    this.refs.cardGallery?.setAttribute('data-previewing', '');
+  }
+
+  /**
+   * Ends the hover preview: removes the preview markers and restores the
+   * `hidden` attribute on slides that were temporarily revealed, so the card
+   * always returns to its resting first image.
+   */
+  #endPreview() {
+    clearTimeout(this.#touchPreviewTimer);
+    this.#pendingPreview = null;
+    this.refs.cardGallery?.removeAttribute('data-previewing');
+
+    for (const { element, wasHidden } of this.#previewedSlides) {
+      if (!element.isConnected) continue;
+      element.removeAttribute('data-preview-hover');
+      element.removeAttribute('reveal');
+      if (wasHidden) {
+        element.setAttribute('hidden', '');
+      }
+    }
+    this.#previewedSlides = [];
+  }
+
+  /**
+   * Resets the image, ending any hover preview so the card returns to its
+   * resting image (the active slide).
    * @param {PointerEvent} event - The pointer event.
    */
   resetImage(event) {
-    if (event.pointerType !== 'mouse') return;
-
-    const { slideshow } = this.refs;
-
-    if (!this.variantPicker) {
-      if (!slideshow) return;
-      slideshow.previous(undefined, { animate: false });
-    } else {
-      this.#resetVariant();
-    }
+    this.#endPreview();
   }
 
   /**
@@ -517,6 +744,8 @@ export class ProductCard extends ProductCardLink {
     const { slideshow } = this.refs;
 
     if (!slideshow) return;
+
+    this.#endPreview();
 
     // If we have a selected variant, always use its image
     if (this.variantPicker?.selectedOption) {

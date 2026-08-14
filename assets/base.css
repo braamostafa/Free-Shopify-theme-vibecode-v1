@@ -1,5 +1,7 @@
 * {
   box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
 }
 
 body {
@@ -1083,19 +1085,26 @@ input:not(:placeholder-shown)::placeholder {
 }
 
 .button,
-button.shopify-payment-button__button--unbranded {
-  --button-color: var(--color-primary-button-text);
-  --button-background-color: var(--color-primary-button-background);
-  --button-border-color: var(--color-primary-button-border);
-  --button-border-width: var(--style-border-width-primary);
-  --button-focus-outline-color: var(--color-primary-button-focus-outline);
+button.shopify-payment-button__button--unbranded,
+.shopify-payment-button__button {
+  --button-color: #000000 !important;
+  --button-background-color: #ffffff !important;
+  --button-border-color: #000000 !important;
+  --button-border-width: 1px !important;
+  color: #000000 !important;
+  background-color: #ffffff !important;
+  border: 1px solid #000000 !important;
+  box-shadow: inset 0 0 0 1px #000000 !important;
 }
 
-.button:hover,
-button.shopify-payment-button__button--unbranded:hover:not([disabled]) {
-  --button-color: var(--color-primary-button-hover-text);
-  --button-background-color: var(--color-primary-button-hover-background);
-  --button-border-color: var(--color-primary-button-hover-border);
+button.shopify-payment-button__button--unbranded:hover:not([disabled]),
+.shopify-payment-button__button:hover:not([disabled]) {
+  --button-color: #ffffff !important;
+  --button-background-color: #000000 !important;
+  --button-border-color: #000000 !important;
+  color: #ffffff !important;
+  background-color: #000000 !important;
+  border-color: #000000 !important;
 }
 
 .button-secondary {
@@ -1338,14 +1347,32 @@ product-price.text-block:is(.h1, .h2, .h3, .h4, .h5, .h6) .volume-pricing-note {
 }
 
 .compare-at-price {
-  color: rgb(var(--color-rgb, var(--color-foreground-rgb)) / var(--opacity-subdued-text));
+  color: rgb(var(--color-foreground-rgb) / var(--opacity-subdued-text));
   text-decoration-line: line-through;
   text-decoration-thickness: 1.5px;
-  text-decoration-color: rgb(var(--color-rgb, var(--color-foreground-rgb)) / var(--opacity-30));
+  text-decoration-color: rgb(var(--color-foreground-rgb) / 0.4);
 }
 
 .price-item__group {
   display: inline-block;
+}
+
+/* Sale price (the price the customer pays) in red */
+.price:has(+ .compare-at-price) {
+  color: #dc2626;
+}
+
+/* Discount badge */
+.price-badge {
+  display: inline-block;
+  background-color: #fde9e4;
+  color: #dc2626;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-left: 6px;
+  vertical-align: middle;
 }
 
 /* Spacing style */
@@ -2208,5 +2235,176 @@ main > .shopify-section:first-child .section:not(.disable-section-top-offset) {
   /* Make sticky content immediately stick to the top of the page */
   .sticky-content {
     margin-top: calc(var(--header-height) * var(--transparent-header-offset-boolean) * -1);
+  }
+}
+
+/* ============================================================================
+   🎨 PALETTE: DELIGHTFUL UX & CUSTOM DESIGN SYSTEM ALIGNMENT
+   - Main Colors: White (#ffffff), Black (#000000), Light Gray (#DFDFDF)
+   - Button Hover Accent: Milky Beige (لبني) (#ECE2CF)
+   ============================================================================ */
+
+/* 1. Global Custom Theme Variables Overrides */
+:root {
+  --color-background: #ffffff;
+  --color-foreground: #000000;
+  --color-border: #DFDFDF;
+  --color-primary-button-background: #000000;
+  --color-primary-button-text: #ffffff;
+  --color-primary-button-border: #000000;
+  --color-primary-button-hover-background: #ECE2CF;
+  --color-primary-button-hover-text: #000000;
+  --color-primary-button-hover-border: #ECE2CF;
+}
+
+/* 2. Premium & High-Contrast Announcement Bar Styling (PC & Mobile) */
+.announcement-bar {
+  background-color: #000000 !important;
+  color: #ffffff !important;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  font-size: 0.7rem;
+  font-weight: 500;
+  border-block-end: 1px solid rgba(255, 255, 255, 0.15) !important;
+}
+
+.announcement-bar__text,
+.announcement-bar__text a {
+  color: #ffffff !important;
+  text-decoration: none;
+  transition: opacity 0.2s ease-out;
+}
+
+.announcement-bar__text a:hover {
+  opacity: 0.8;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+/* 3. Refined Header & Layout Organization (PC & Mobile) */
+.header__row--top {
+  border-bottom: 1px solid #DFDFDF !important;
+}
+
+/* Smooth Navigation & Action Hover Transition Effects */
+.menu-list__link,
+.header-actions__action {
+  transition: color 0.2s ease-out, opacity 0.2s ease-out !important;
+}
+
+.menu-list__link:hover,
+.menu-list__link[aria-expanded='true'] {
+  color: #000000 !important;
+  text-decoration: underline;
+  text-underline-offset: 8px;
+  text-decoration-thickness: 1px;
+  text-decoration-color: #000000;
+}
+
+.header-actions__action:hover {
+  color: #000000 !important;
+  opacity: 0.7;
+}
+
+/* 4. Hero Slideshow & Slide Controls Interactive Polish */
+.slideshow-control {
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), color 0.25s ease !important;
+}
+
+.slideshow-control:hover:not([disabled]) {
+  transform: scale(1.15);
+  color: #000000 !important;
+}
+
+/* Pagination Dots scaling and styling for active slide feedback */
+.slideshow-controls__dots button::after {
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.25s ease !important;
+}
+
+.slideshow-controls__dots button[aria-selected="true"]::after {
+  transform: scale(1.35);
+  background-color: #000000 !important;
+}
+
+/* 5. Ultra-Premium & Luxurious Hero Slider / Slideshow Enhancements */
+
+/* Modern Backdrop Gradient Overlay to elevate text readability & premium feel */
+.slide__image-container::after,
+.hero__media-grid::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.65) 0%,
+    rgba(0, 0, 0, 0.25) 50%,
+    rgba(0, 0, 0, 0.1) 100%
+  ) !important;
+  z-index: 2;
+  pointer-events: none;
+}
+
+/* Slow, silky-smooth zoom transition for hero/slider media */
+.slide__image-container img,
+.slide__image-container video,
+.hero__media-grid img,
+.hero__media-grid video {
+  transition: transform 1.8s cubic-bezier(0.25, 1, 0.5, 1) !important;
+}
+
+.slideshow-slide:hover .slide__image-container img,
+.slideshow-slide:hover .slide__image-container video,
+.hero:hover .hero__media-grid img,
+.hero:hover .hero__media-grid video {
+  transform: scale(1.04);
+}
+
+/* Elegant fade-up slide text and button animations for high-end luxury feel */
+.slide__content .group-block-content,
+.hero__content-wrapper .group-block-content {
+  animation: luxury-fade-up 0.9s cubic-bezier(0.25, 1, 0.5, 1) both;
+}
+
+@keyframes luxury-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Sleek button interactions with subtle black shadow lift */
+.button,
+.button-custom {
+  transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1) !important;
+}
+
+.button:hover,
+.button-custom:hover {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12) !important;
+  transform: translateY(-2px);
+}
+
+/* Perfect mobile responsiveness & centered alignment for clean, modern mobile screens */
+@media screen and (max-width: 749px) {
+  .slide__content,
+  .hero__content-wrapper {
+    padding: var(--padding-lg) !important;
+    text-align: center;
+  }
+
+  .slide__content .group-block-content,
+  .hero__content-wrapper .group-block-content {
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  .slide__content h1, .slide__content h2, .slide__content h3,
+  .hero__content-wrapper h1, .hero__content-wrapper h2, .hero__content-wrapper h3 {
+    text-align: center !important;
+    font-size: clamp(1.5rem, 6vw, 2.5rem) !important;
   }
 }

@@ -1,0 +1,412 @@
+{%- comment -%}Resolve product: try closest.product first, fallback to global product{%- endcomment -%}
+{%- assign product_resource = closest.product | default: product -%}
+{%- assign tab_reference = blank -%}
+{%- if product_resource != blank -%}
+  {%- assign tab_reference = product_resource.metafields.custom.product_tab_reference -%}
+{%- endif -%}
+
+{% if product_resource != blank and section.blocks.size > 0 %}
+  <div
+    class="collapsible-rows section section--{{ section.settings.section_width }}"
+    data-testid="collapsible-rows-section"
+    style="padding-block-start: {{ section.settings.padding-block-start }}px; padding-block-end: {{ section.settings.padding-block-end }}px;"
+  >
+    <product-tabs class="product-tabs">
+      <div class="product-tabs__nav" role="tablist">
+        {% assign enabled_index = 0 %}
+        {% for block in section.blocks %}
+          {% if block.settings.enable %}
+            <button
+              class="product-tabs__tab"
+              role="tab"
+              data-tab-index="{{ enabled_index }}"
+              aria-selected="{% if enabled_index == 0 %}true{% else %}false{% endif %}"
+              {{ block.shopify_attributes }}
+            >
+              {{ block.settings.title | escape }}
+            </button>
+            {% assign enabled_index = enabled_index | plus: 1 %}
+          {% endif %}
+        {% endfor %}
+      </div>
+      <div class="product-tabs__panels">
+        {% assign enabled_index = 0 %}
+        {% for block in section.blocks %}
+          {% if block.settings.enable %}
+            <div
+              class="product-tabs__panel{% if enabled_index == 0 %} is-active{% endif %}"
+              role="tabpanel"
+              data-panel-index="{{ enabled_index }}"
+            >
+              {% if block.settings.description_metafield != blank %}
+                <div class="product-tabs__content">
+                  {{ block.settings.description_metafield }}
+                </div>
+              {% endif %}
+
+              {%- if tab_reference != blank -%}
+                {%- assign tab_text = tab_reference.value.tab_text -%}
+                {%- assign tab_image = tab_reference.value.tab_image -%}
+                {%- assign tab_img_url = tab_image | image_url: width: 1000 -%}
+
+                {%- if tab_text != blank -%}
+                  <div class="product-tabs__content rte">
+                    {{ tab_text }}
+                  </div>
+                {%- endif -%}
+
+                {%- if tab_img_url != blank -%}
+                  <div class="product-tabs__metaobject-image">
+                    <img
+                      src="{{ tab_img_url }}"
+                      alt="{{ tab_reference.value.tab_title | default: 'Tab image' | escape }}"
+                      loading="lazy"
+                      width="{{ tab_image.width }}"
+                      height="{{ tab_image.height }}"
+                    >
+                  </div>
+                {%- endif -%}
+              {%- endif -%}
+            </div>
+            {% assign enabled_index = enabled_index | plus: 1 %}
+          {% endif %}
+        {% endfor %}
+      </div>
+    </product-tabs>
+
+    {% assign enabled_index = 0 %}
+    {% for block in section.blocks %}
+      {% if block.settings.enable %}
+        <details
+          class="details product-tabs__mobile-details"
+          data-testid="collapsible-rows__details"
+          {% if section.settings.open_first_row_by_default and enabled_index == 0 %}open{% endif %}
+          {{ block.shopify_attributes }}
+        >
+          <summary class="details__header">
+            <span class="details__heading">{{ block.settings.title | escape }}</span>
+            <span class="svg-wrapper icon-plus" aria-hidden="true">
+              {{- 'icon-plus.svg' | inline_asset_content -}}
+            </span>
+          </summary>
+          {% if block.settings.description_metafield != blank %}
+            <div class="details-content">
+              {{ block.settings.description_metafield }}
+            </div>
+          {% endif %}
+
+          {%- if tab_reference != blank -%}
+            {%- assign tab_text = tab_reference.value.tab_text -%}
+            {%- assign tab_image = tab_reference.value.tab_image -%}
+            {%- assign tab_img_url = tab_image | image_url: width: 1000 -%}
+
+            {%- if tab_text != blank -%}
+              <div class="details-content rte">
+                {{ tab_text }}
+              </div>
+            {%- endif -%}
+
+          {%- if tab_img_url != blank -%}
+            <div class="details-content__image">
+              <img
+                src="{{ tab_img_url }}"
+                alt="{{ tab_reference.value.tab_title | default: 'Tab image' | escape }}"
+                loading="lazy"
+                width="{{ tab_image.width }}"
+                height="{{ tab_image.height }}"
+              >
+            </div>
+          {%- endif -%}
+        {%- endif -%}
+        </details>
+        {% assign enabled_index = enabled_index | plus: 1 %}
+      {% endif %}
+    {% endfor %}
+  </div>
+{% endif %}
+
+{% stylesheet %}
+  /* ===== Mobile: Accordion (default) ===== */
+  .product-tabs {
+    display: none;
+  }
+
+  .product-tabs__mobile-details {
+    display: block;
+  }
+
+  .collapsible-rows {
+    width: 100%;
+  }
+
+  .collapsible-rows .product-tabs__mobile-details {
+    border-block-start: 1px solid rgb(var(--color-foreground-rgb) / 0.15);
+  }
+
+  .collapsible-rows .product-tabs__mobile-details .details__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--gap-sm);
+    padding-block: var(--padding-md);
+    cursor: pointer;
+    min-height: var(--minimum-touch-target);
+    list-style: none;
+  }
+
+  .collapsible-rows .product-tabs__mobile-details .details__header::-webkit-details-marker {
+    display: none;
+  }
+
+  .collapsible-rows .product-tabs__mobile-details .details__heading {
+    font-weight: var(--font-weight-semibold);
+  }
+
+  .collapsible-rows .product-tabs__mobile-details .icon-plus {
+    flex-shrink: 0;
+    width: 18px;
+    height: 18px;
+  }
+
+  .collapsible-rows .product-tabs__mobile-details .icon-plus svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .collapsible-rows .product-tabs__mobile-details .details-content {
+    padding-block-end: var(--padding-lg);
+  }
+
+  .collapsible-rows .product-tabs__mobile-details img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+  }
+
+  .collapsible-rows .details-content__image {
+    padding-block-end: var(--padding-lg);
+  }
+
+  .collapsible-rows .details-content__image img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+    border-radius: 8px;
+  }
+
+  /* ===== Desktop: Tabs ===== */
+  @media screen and (min-width: 750px) {
+    .product-tabs {
+      display: block;
+    }
+
+    .product-tabs__mobile-details {
+      display: none !important;
+    }
+
+    .product-tabs__nav {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      padding-block-end: 24px;
+    }
+
+    .product-tabs__tab {
+      appearance: none;
+      background: transparent;
+      border: 1px solid rgb(var(--color-foreground-rgb) / 0.25);
+      border-radius: 9999px;
+      padding: 8px 20px;
+      font-size: 0.8125rem;
+      font-weight: var(--font-weight-semibold, 600);
+      letter-spacing: 0.06em;
+      color: rgb(var(--color-foreground-rgb) / 0.5);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+      text-transform: uppercase;
+    }
+
+    .product-tabs__tab:hover {
+      color: var(--color-foreground, #1a1a1a);
+      border-color: rgb(var(--color-foreground-rgb) / 0.4);
+    }
+
+    .product-tabs__tab[aria-selected="true"] {
+      background: var(--color-foreground, #1a1a1a);
+      color: var(--color-background, #fff);
+      border-color: var(--color-foreground, #1a1a1a);
+    }
+
+    .product-tabs__panel {
+      display: none;
+      padding: 16px 0;
+      text-align: center;
+    }
+
+    .product-tabs__panel.is-active {
+      display: block;
+    }
+
+    .product-tabs__content {
+      font-size: 0.9375rem;
+      line-height: 1.6;
+      color: rgb(var(--color-foreground-rgb) / 0.7);
+      text-align: center;
+    }
+
+    .product-tabs__content img {
+      max-width: 100%;
+      height: auto;
+      display: block;
+      margin-inline: auto;
+    }
+
+    .product-tabs__metaobject-image {
+      margin-block-start: 16px;
+      text-align: center;
+    }
+
+    .product-tabs__metaobject-image img {
+      max-width: 100%;
+      height: auto;
+      display: block;
+      border-radius: 8px;
+    }
+  }
+{% endstylesheet %}
+
+<script>
+  if (!customElements.get('product-tabs')) {
+    class ProductTabs extends HTMLElement {
+      connectedCallback() {
+        this.tabs = this.querySelectorAll('.product-tabs__tab');
+        this.panels = this.querySelectorAll('.product-tabs__panel');
+
+        this.tabs.forEach((tab) => {
+          tab.addEventListener('click', () => this.switchTab(tab));
+        });
+      }
+
+      switchTab(selectedTab) {
+        const index = parseInt(selectedTab.dataset.tabIndex);
+
+        this.tabs.forEach((tab) => {
+          tab.setAttribute('aria-selected', 'false');
+        });
+        this.panels.forEach((panel) => {
+          panel.classList.remove('is-active');
+        });
+
+        selectedTab.setAttribute('aria-selected', 'true');
+        this.panels[index].classList.add('is-active');
+      }
+    }
+
+    customElements.define('product-tabs', ProductTabs);
+  }
+</script>
+
+{% schema %}
+{
+  "name": "Collapsible rows",
+  "max_blocks": 5,
+  "settings": [
+    {
+      "type": "select",
+      "id": "section_width",
+      "label": "t:settings.width",
+      "options": [
+        {
+          "value": "page-width",
+          "label": "t:options.page"
+        },
+        {
+          "value": "full-width",
+          "label": "t:options.full"
+        }
+      ],
+      "default": "page-width"
+    },
+    {
+      "type": "checkbox",
+      "id": "open_first_row_by_default",
+      "label": "Open first row by default",
+      "default": true
+    },
+    {
+      "type": "header",
+      "content": "t:content.padding"
+    },
+    {
+      "type": "range",
+      "id": "padding-block-start",
+      "label": "t:settings.top",
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "unit": "px",
+      "default": 0
+    },
+    {
+      "type": "range",
+      "id": "padding-block-end",
+      "label": "t:settings.bottom",
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "unit": "px",
+      "default": 0
+    }
+  ],
+  "blocks": [
+    {
+      "type": "row",
+      "name": "Collapsible row",
+      "settings": [
+        {
+          "type": "checkbox",
+          "id": "enable",
+          "label": "Enable this row",
+          "default": true
+        },
+        {
+          "type": "text",
+          "id": "title",
+          "label": "Title",
+          "default": "Details"
+        },
+        {
+          "type": "richtext",
+          "id": "description_metafield",
+          "label": "Description",
+          "info": "Enter content manually, or connect a dynamic source (e.g. a multi_line_text_field product metafield)."
+        }
+      ]
+    }
+  ],
+  "templates": ["product"],
+  "presets": [
+    {
+      "name": "Collapsible rows",
+      "blocks": [
+        {
+          "type": "row"
+        },
+        {
+          "type": "row"
+        },
+        {
+          "type": "row"
+        },
+        {
+          "type": "row"
+        },
+        {
+          "type": "row"
+        }
+      ]
+    }
+  ]
+}
+{% endschema %}

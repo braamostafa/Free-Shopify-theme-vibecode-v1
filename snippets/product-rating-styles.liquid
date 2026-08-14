@@ -1,0 +1,46 @@
+{%- doc -%}
+  Product brand + star rating styles.
+  Shared by product pages (title text block) and product cards (product-title block).
+
+  @example
+  {% render 'product-rating-styles' %}
+{%- enddoc -%}
+
+{% stylesheet %}
+  .product-brand {
+    margin: 0 0 6px;
+    font-size: var(--font-size--xs);
+    font-weight: var(--font-weight-semibold);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgb(var(--color-foreground-rgb) / 0.55);
+  }
+
+  .product-brand:empty {
+    display: none;
+  }
+
+  .product-rating {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin-block-start: 6px;
+    line-height: 1;
+  }
+
+  .product-rating__stars {
+    display: inline-flex;
+    gap: 2px;
+    line-height: 1;
+  }
+
+  .product-rating__star {
+    font-size: 1.1em;
+    color: rgb(var(--color-foreground-rgb) / 0.22);
+  }
+
+  .product-rating[data-rating='4'] .product-rating__star:nth-child(-n + 4),
+  .product-rating[data-rating='5'] .product-rating__star {
+    color: #f7a400;
+  }
+{% endstylesheet %}

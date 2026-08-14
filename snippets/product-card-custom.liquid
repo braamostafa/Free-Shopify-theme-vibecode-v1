@@ -1,0 +1,68 @@
+{%- doc -%}
+  كارت المنتج الموحد (المصدر الوحيد للتصميم والمنطق).
+  يُستخدم في: قسم المنتجات بالصفحة الرئيسية (products-tabs)، صفحة الكاتالوج (main-collection)،
+  نتائج البحث (search-results)، والمنتجات المقترحة (product-recommendations).
+  أي تعديل هنا يظهر في كل الأماكن تلقائياً.
+
+  @param {object} product - المنتج
+  @param {object} [block] - البلوك (اختياري، من أقسام الـ Block System)
+  @param {string} [card_block_id] - معرّف فريد لكل كارت (يتجنب تكرار ids المودال والفورم)
+  @param {boolean} [render_card_assets] - يتم تمرير true لأول كارت فقط (يرندر الـ CSS/JS مرة واحدة)
+  @param {string} [product_view_context] - سياق الكارت (collection / search / recommendation ...)
+  @param {number} [product_card_gap] - المسافة الرأسية بين عناصر الكارت
+{%- enddoc -%}
+
+{% capture card_children %}
+  {% render '_product-card-gallery',
+    product: product,
+    block: block,
+    card_block_id: card_block_id,
+    render_card_assets: render_card_assets
+  %}
+
+  <a class="contents user-select-text" href="{{ product.url }}">
+    <p role="heading" aria-level="3" class="text-block text-block--align-left rte" style="--width: 100%; padding-block-start: 4px;">{{ product.title }}</p>
+  </a>
+
+  {%- comment -%}
+    سواتش الألوان الرسمي من الثيم (نظام Shopify المدمج):
+    - هوفر على الكارت => الصورة الثانية (سلوك الثيم الأصلي)
+    - اختيار لون => صورة اللون دي وبيتحدث السعر والـ variant
+  {%- endcomment -%}
+  {%- liquid
+    assign product_has_swatches = false
+    for product_option in product.options_with_values
+      assign swatch_count = product_option.values | map: 'swatch' | compact | size
+      if swatch_count > 0
+        assign product_has_swatches = true
+      endif
+    endfor
+  -%}
+  {%- if product_has_swatches -%}
+  <product-swatches
+    data-product-id="{{ product.id }}"
+    data-product-url="{{ product.url }}"
+    style="
+      --overflow-list-alignment: center;
+      --overflow-list-alignment-mobile: center;
+      --product-swatches-alignment: center;
+      --product-swatches-alignment-mobile: center;
+    "
+  >
+    {% render 'variant-swatches', product_resource: product %}
+  </product-swatches>
+  {%- endif -%}
+
+  <product-price class="text-block text-block--align-center h6" data-product-id="{{ product.id }}" style="--width: 100%; --horizontal-alignment: center;">
+    {% render 'price', product_resource: product, show_sale_price_first: true %}
+  </product-price>
+{% endcapture %}
+
+{% render 'product-card',
+  children: card_children,
+  product: product,
+  block: block,
+  product_card_gap: product_card_gap,
+  product_view_context: product_view_context,
+  product_card_render_styles: render_card_assets
+%}

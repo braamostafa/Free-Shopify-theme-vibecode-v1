@@ -1,0 +1,190 @@
+{%- doc -%}
+  Shared product card styles used by the homepage "Products Tabs" section and the
+  product page "You may also like" (product-recommendations) section.
+
+  Both sections add the `data-product-card-styles` attribute to their wrapper and
+  render this snippet, so a single set of Theme Settings controls the card in both.
+
+  @example
+  <div data-product-card-styles>
+    {% render 'product-card-shared-styles' %}
+  </div>
+{%- enddoc -%}
+
+{% style %}
+  [data-product-card-styles] {
+    --product-discount-badge-display: {% if settings.show_discount_badge %}block{% else %}none{% endif %};
+    --product-discount-badge-bg: {{ settings.badge_bg }};
+    --product-discount-badge-color: {{ settings.badge_color }};
+    --product-discount-badge-font-size: {{ settings.badge_font_size }}px;
+    --product-discount-badge-radius: {{ settings.badge_radius }}px;
+    --product-card-bg: {{ settings.card_background }};
+    --product-card-radius: {{ settings.card_radius }}px;
+    --product-card-shadow: {% if settings.card_shadow %}0 6px 16px rgba(0, 0, 0, 0.12){% else %}none{% endif %};
+    --product-card-image-ratio: {{ settings.card_image_ratio }};
+    --product-card-actions-bg: {{ settings.actions_bg }};
+    --product-card-actions-fg: {{ settings.actions_color }};
+    --product-card-actions-size: {{ settings.actions_size }}px;
+    --product-card-wishlist-size: {{ settings.wishlist_size }}px;
+    --product-card-title-size: {{ settings.card_title_size }}px;
+    --product-card-price-size: {{ settings.card_price_size }}px;
+  }
+
+  /* نسبة أبعاد صور المنتجات داخل الكارت */
+  [data-product-card-styles] .product-media-container,
+  [data-product-card-styles] .card-gallery svg {
+    aspect-ratio: var(--product-card-image-ratio);
+    background-color: #f5f5f5;
+  }
+
+  [data-product-card-styles] .product-media-container img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  /* خلفية واستدارة وظل الكارت */
+  [data-product-card-styles] .card-gallery {
+    border-radius: var(--product-card-radius);
+    background: var(--product-card-bg);
+    box-shadow: var(--product-card-shadow);
+  }
+
+  /* تنسيق أيقونات الكارت — خلفية شبه شفافة مع شكل دائري */
+  [data-product-card-styles] .product-card-actions__add-btn,
+  [data-product-card-styles] .product-card-actions__wishlist,
+  [data-product-card-styles] .product-card-modal__close,
+  [data-product-card-styles] .product-card-modal__arrow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border: none;
+    cursor: pointer;
+  }
+
+  [data-product-card-styles] .product-card-actions__add-btn,
+  [data-product-card-styles] .product-card-actions__wishlist {
+    color: var(--product-card-actions-fg);
+    background: var(--product-card-actions-bg) !important;
+    border: 1px solid rgba(0, 0, 0, 0.06) !important;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08) !important;
+  }
+
+  [data-product-card-styles] .product-card-actions__add-btn:hover,
+  [data-product-card-styles] .product-card-actions__add-btn:focus-visible,
+  [data-product-card-styles] .product-card-actions__wishlist:hover,
+  [data-product-card-styles] .product-card-actions__wishlist:focus-visible {
+    background: color-mix(in srgb, var(--product-card-actions-bg), #000000 8%) !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12) !important;
+  }
+
+  /* زرار إغلاق المودال — ثابت على الإطار يمين فوق (الموضع والاستجابة بتيجي من سنيبت الكارت) */
+  [data-product-card-styles] .product-card-modal__close {
+    position: absolute !important;
+    z-index: 10;
+  }
+
+  /* الـ dialog لازم overflow: visible عشان زرار الإغلاق اللي طالع بره ما يتقصش */
+  [data-product-card-styles] .product-card-modal {
+    overflow: visible !important;
+  }
+
+  /* ضمان ظهور الأيقونات نفسها بلون واضح من غير أي خلفية */
+  [data-product-card-styles] .product-card-actions__add-btn svg,
+  [data-product-card-styles] .product-card-actions__wishlist svg,
+  [data-product-card-styles] .product-card-modal__arrow svg {
+    background: transparent !important;
+    color: var(--product-card-actions-fg);
+    stroke: var(--product-card-actions-fg);
+  }
+
+  /* أيقونة الإغلاق — بيضا (علشان زر الإغلاق خلفيته سودا) */
+  [data-product-card-styles] .product-card-modal__close svg {
+    background: transparent !important;
+    color: #ffffff;
+    stroke: #ffffff;
+  }
+
+  /* زرار إضافة للسلة في المودال — أسود نظيف، الأيقونة البيضا من غير أي خلفية أو ظل */
+  [data-product-card-styles] .product-card-modal__add-btn {
+    background-color: #000000 !important;
+    color: #ffffff !important;
+    border: 1px solid #000000 !important;
+    box-shadow: none !important;
+    outline: none !important;
+    position: relative;
+  }
+
+  [data-product-card-styles] .product-card-modal__add-btn:hover {
+    background-color: #1a1a1a !important;
+    color: #ffffff !important;
+  }
+
+  [data-product-card-styles] .product-card-modal__add-btn svg {
+    background: transparent !important;
+    color: #ffffff;
+    stroke: #ffffff;
+    fill: none !important;
+    display: inline-block;
+    vertical-align: middle;
+  }
+
+  [data-product-card-styles] .product-card-modal__add-btn svg * {
+    fill: none !important;
+  }
+
+  [data-product-card-styles] .product-card-modal__add-btn::before,
+  [data-product-card-styles] .product-card-modal__add-btn::after {
+    display: none !important;
+    content: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+
+  [data-product-card-styles] .product-card-actions__add-btn {
+    width: var(--product-card-actions-size);
+    height: var(--product-card-actions-size);
+    border-radius: 50%;
+  }
+
+  [data-product-card-styles] .product-card-actions__wishlist {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 11;
+    width: var(--product-card-wishlist-size);
+    height: var(--product-card-wishlist-size);
+    border-radius: 50%;
+  }
+
+  /* سواتش الألوان الرسمي من الثيم (نظام Shopify المدمج) */
+  [data-product-card-styles] product-swatches {
+    width: 100%;
+    display: flex;
+    position: relative;
+    overflow: hidden;
+    gap: 0;
+    flex-shrink: 0;
+    padding-block-start: 4px;
+  }
+
+  /* السعر في النص — العناصر الداخلية inline فمحتاجين text-align */
+  [data-product-card-styles] product-price {
+    text-align: center;
+  }
+
+  [data-product-card-styles] product-price > * {
+    text-align: center;
+  }
+
+  /* حجم عنوان المنتج وسعره — قابل للتعديل من محرر الثيم */
+  [data-product-card-styles] .text-block {
+    font-size: var(--product-card-title-size);
+  }
+
+  [data-product-card-styles] product-price,
+  [data-product-card-styles] product-price > * {
+    font-size: var(--product-card-price-size) !important;
+  }
+{% endstyle %}

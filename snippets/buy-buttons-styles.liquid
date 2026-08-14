@@ -106,6 +106,9 @@
   }
 
   shopify-accelerated-checkout {
+    --shopify-accelerated-checkout-button-background-color: #ffffff;
+    --shopify-accelerated-checkout-button-text-color: #000000;
+    --shopify-accelerated-checkout-button-border-color: #000000;
     --shopify-accelerated-checkout-button-border-radius: var(--style-border-radius-buttons-primary);
     --shopify-accelerated-checkout-button-block-size: var(--height-buy-buttons);
   }
@@ -320,5 +323,33 @@
 
   .shopify-payment-button__more-options[aria-hidden='true'] {
     display: none;
+  }
+
+  /* Force Buy Now / Accelerated Checkout button to have white background & black text */
+  .product-form-buttons .shopify-payment-button__button,
+  .shopify-payment-button__button,
+  button.shopify-payment-button__button--unbranded,
+  .shopify-payment-button__button--unbranded {
+    --button-color: #000000 !important;
+    --button-background-color: #ffffff !important;
+    --button-border-color: #000000 !important;
+    --button-border-width: 1px !important;
+    color: #000000 !important;
+    background-color: #ffffff !important;
+    border: 1px solid #000000 !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+  }
+
+  .product-form-buttons .shopify-payment-button__button:hover:not([disabled]),
+  .shopify-payment-button__button:hover:not([disabled]),
+  button.shopify-payment-button__button--unbranded:hover:not([disabled]),
+  .shopify-payment-button__button--unbranded:hover:not([disabled]) {
+    --button-color: #ffffff !important;
+    --button-background-color: #000000 !important;
+    --button-border-color: #000000 !important;
+    color: #ffffff !important;
+    background-color: #000000 !important;
+    border-color: #000000 !important;
   }
 {% endstylesheet %}

@@ -51,7 +51,11 @@ class CartDrawerComponent extends Component {
    * Handles the theme-drawer opening — updates sticky state and wires up the installments CTA.
    */
   #handleDrawerOpen = () => {
-    this.#updateStickyState();
+    // Defer the layout reads (getBoundingClientRect) to the next frame instead
+    // of running them synchronously inside the click task — this keeps the
+    // cart icon interaction fast (INP). The drawer is still animating in, so
+    // a one-frame delay is invisible.
+    requestAnimationFrame(() => this.#updateStickyState());
 
     // Close cart drawer when installments CTA is clicked to avoid overlapping dialogs.
     // Re-queried on every open so it survives cart content re-renders that
@@ -77,10 +81,6 @@ class CartDrawerComponent extends Component {
       event.target instanceof Element ? event.target.closest('dialog:modal') : null
     );
 
-    if (shouldAutoOpen && !sourceModal && !this.#isCartEmpty()) {
-      this.#themeDrawer?.open();
-    }
-
     event.promise
       ?.then(({ detail }) => {
         const settle = () => requestAnimationFrame(() => this.#updateStickyState());
@@ -105,10 +105,6 @@ class CartDrawerComponent extends Component {
         if (error?.name !== 'AbortError') console.warn('[cart-drawer] Event promise rejected:', error);
       });
   };
-
-  #isCartEmpty() {
-    return Boolean(this.querySelector('.cart-drawer--empty'));
-  }
 
   #updateStickyState() {
     const dialog = this.#dialog;

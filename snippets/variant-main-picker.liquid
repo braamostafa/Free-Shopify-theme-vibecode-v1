@@ -95,9 +95,6 @@
           >
             <legend>
               {{ product_option.name | escape -}}
-              {%- if variant_style == 'swatch' -%}
-                <span class="variant-option__swatch-value">{{ product_option.selected_value }}</span>
-              {%- endif %}
             </legend>
             {%- for product_option_value in product_option.values -%}
               {% if product_option_value.size > longest_value and option_id_attribute %}
@@ -165,6 +162,12 @@
                 {% render 'strikethrough-variant', product_option: product_option_value %}
               </label>
             {%- endfor -%}
+            {%- if variant_style == 'swatch' -%}
+              <span
+                class="variant-option__swatch-value"
+                data-testid="variant-option-swatch-value"
+              >{{ product_option.selected_value }}</span>
+            {%- endif -%}
             {% if option_id_attribute %}
               {% style %}
                 [data-option-id="{{ fieldset_id }}"] {
@@ -242,6 +245,31 @@
       </script>
     </form>
   </variant-picker>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      document.querySelectorAll('variant-picker').forEach(function(picker) {
+        picker.addEventListener('change', function() {
+          requestAnimationFrame(function() {
+            picker.querySelectorAll('.variant-option--swatches .variant-option__swatch-value').forEach(function(span) {
+              var fieldset = span.closest('fieldset');
+              if (!fieldset) return;
+              var checked = fieldset.querySelector('input:checked');
+              if (checked) {
+                var label = checked.closest('label');
+                var name = checked.value;
+                if (label) {
+                  var hidden = label.querySelector('.visually-hidden');
+                  if (hidden) name = hidden.textContent.trim().split(' - ')[0];
+                }
+                span.textContent = name;
+              }
+            });
+          });
+        });
+      });
+    });
+  </script>
 {% endunless %}
 
 {% render 'swatch-styles' %}

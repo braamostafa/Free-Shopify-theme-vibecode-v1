@@ -75,49 +75,106 @@
 
     {%- if recommendations.performed or closest.product == blank -%}
       {% liquid
-        assign products = recommendations.products
-
+        assign all_products = collections.all.products
+        assign all_products_count = all_products.size
+        assign current_product_id = closest.product.id | default: 0
+        assign picked = ''
+        assign picked_count = 0
+        assign display_count = 0
+      %}
+      {% liquid
         if closest.product == blank
           # Onboarding mode: Show placeholder products
-          for i in (1..block_settings.max_products)
-            assign products = products | append: ', '
-            assign products = products | split: ','
+          assign display_count = block_settings.max_products
+        elsif all_products_count > 0
+          # Show random unique products from the whole catalog, reseeded on every request
+          assign pick_goal = block_settings.max_products | plus: 1
+          assign seconds = 'now' | date: '%s'
+          assign seed = seconds | times: 1103515245 | plus: current_product_id | modulo: 2147483647
+          assign base = seed | modulo: all_products_count
+          assign step = seed | modulo: 23 | plus: 3
+
+          for i in (1..15)
+            assign index = step | times: i | plus: base | modulo: all_products_count
+            assign marker = '|' | append: index | append: '|'
+            unless picked contains marker
+              assign picked = picked | append: marker
+              assign picked_count = picked_count | plus: 1
+            endunless
+            if picked_count >= pick_goal
+              break
+            endif
           endfor
-        elsif recommendations.performed and recommendations.products_count == 0
-          # No recommendations found, pull from catalog
-          if block_settings.recommendation_type == 'related'
-            assign products = collections.all.products | reject: 'id', closest.product.id
-          elsif block_settings.recommendation_type == 'complementary'
-            # Do not recommend the All collection as complementary products
-            assign products = null
-          endif
-        else
-          assign products = recommendations.products
+
+          # Fill any remaining slots sequentially to guarantee distinct indices
+          for i in (1..15)
+            if picked_count >= pick_goal
+              break
+            endif
+            assign index = base | plus: i | modulo: all_products_count
+            assign marker = '|' | append: index | append: '|'
+            unless picked contains marker
+              assign picked = picked | append: marker
+              assign picked_count = picked_count | plus: 1
+            endunless
+          endfor
         endif
       %}
       {% capture list_items %}
-        {% for product in products limit: block_settings.max_products %}
-          <div class="resource-list__item">
-            {% content_for 'block',
-              type: '_product-card',
-              id: 'static-product-card',
-              closest.product: product
-            %}
-          </div>
-          {% if block_settings.layout_type == 'carousel' or block_settings.carousel_on_mobile %}
+        {% if closest.product == blank %}
+          {% for i in (1..block_settings.max_products) %}
+            <div class="resource-list__item">
+              {% content_for 'block',
+                type: '_product-card',
+                id: 'static-product-card',
+                closest.product: null,
+                product_view_context: 'recommendation'
+              %}
+            </div>
             {% unless forloop.last %}
               <!--@list/split-->
             {% endunless %}
-          {% endif %}
-        {% endfor %}
+          {% endfor %}
+        {% else %}
+          {% for product in all_products %}
+            {%- assign marker = '|' | append: forloop.index0 | append: '|' -%}
+            {% if picked contains marker and product.id != current_product_id %}
+              {%- assign card_block_id = 'recommendation-card-' | append: forloop.index -%}
+              <div class="resource-list__item">
+                {% capture card_children %}
+                  {% render '_product-card-gallery',
+                    product: product,
+                    card_block_id: card_block_id
+                  %}
+                  <a class="contents user-select-text" href="{{ product.url }}">
+                    <p role="heading" aria-level="3" class="text-block text-block--align-left rte" style="--width: 100%; padding-block-start: 4px;">{{ product.title }}</p>
+                  </a>
+                  <product-price class="text-block text-block--align-left h6" data-product-id="{{ product.id }}" style="--width: 100%;">
+                    {% render 'price', product_resource: product, show_sale_price_first: true %}
+                  </product-price>
+                {% endcapture %}
+                {% render 'product-card',
+                  children: card_children,
+                  product: product,
+                  product_card_gap: 8,
+                  product_view_context: 'recommendation'
+                %}
+              </div>
+              {% if block_settings.layout_type == 'carousel' or block_settings.carousel_on_mobile %}
+                <!--@list/split-->
+              {% endif %}
+              {%- assign display_count = display_count | plus: 1 -%}
+            {% endif %}
+          {% endfor %}
+        {% endif %}
       {% endcapture %}
 
       {% liquid
         # Create an array from the list items to be used in the carousel
-        assign slide_content = list_items | strip
+        assign slide_content = list_items | strip | remove_last: '<!--@list/split-->'
         assign slides = slide_content | split: '<!--@list/split-->'
 
-        if products != blank and products.size > 0
+        if display_count > 0
           assign has_recommendations = 'true'
         else
           assign has_recommendations = 'false'
@@ -144,7 +201,7 @@
             {% render 'resource-list-carousel',
               ref: 'resourceListCarousel',
               slides: slides,
-              slide_count: recommendations.products.size,
+              slide_count: display_count,
               settings: block_settings
             %}
         {% endcase %}
@@ -165,7 +222,7 @@
           {% render 'resource-list-carousel',
             ref: 'resourceListCarouselMobile',
             slides: slides,
-            slide_count: recommendations.products.size,
+            slide_count: display_count,
             settings: block_settings
           %}
         </div>

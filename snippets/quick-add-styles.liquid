@@ -15,114 +15,103 @@
 {% stylesheet %}
   /* Quick Add */
   .quick-add {
-    --quick-add-offset: var(--padding-sm);
-    --quick-add-right: calc(var(--quick-add-offset) + var(--padding-inline-end));
-    --quick-add-bottom: calc(var(--quick-add-offset) + var(--padding-block-end));
-    --quick-add-inset-inline-end: max(
-      var(--quick-add-right),
-      calc((var(--border-radius) + var(--quick-add-right)) * (1 - cos(45deg)))
-    );
-    --quick-add-inset-block-end: max(
-      var(--quick-add-bottom),
-      calc((var(--border-radius) + var(--quick-add-bottom)) * (1 - cos(45deg)))
-    );
-
     position: absolute;
     inset: 0;
     z-index: var(--layer-raised);
     pointer-events: none;
-
-    @media screen and (min-width: 750px) {
-      --quick-add-offset: var(--padding-md);
-    }
   }
 
   .quick-add .variant-option__button-label input[data-option-available='false'] {
     cursor: not-allowed;
   }
 
-  /* Hide "Add" button when "Choose" button is shown */
   [data-quick-add-button='choose'] add-to-cart-component {
     display: none;
   }
 
-  /* Hide "Choose" button when "Add" button is shown */
   [data-quick-add-button='add'] .quick-add__button--choose {
     display: none;
   }
 
   product-card:is(:hover, :focus-within) .quick-add__button {
     opacity: 1;
+    transform: translateY(0);
   }
 
   button.quick-add__button {
-    --quick-add-collapsed-width: var(--button-size-md);
-    --quick-add-icon-width: calc(var(--button-size-md) - 4px);
+    --quick-add-collapsed-width: 42px;
+    --quick-add-icon-width: 20px;
     --quick-add-expanded-width: max-content;
 
-    display: var(--quick-add-mobile-display, none);
+    display: flex;
     align-items: center;
-    justify-content: flex-start;
+    justify-content: center;
     gap: 0;
-    background: linear-gradient(var(--quick-add-background, var(--color-background)) 0 100%) padding-box;
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
     padding: 0;
-    border-radius: 50px;
-    border: 2px solid hsl(0 0% 0% / 0.15);
-    height: var(--button-size-md);
+    border-radius: 50%;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    height: var(--quick-add-collapsed-width);
     width: var(--quick-add-collapsed-width);
     cursor: pointer;
-    opacity: var(--quick-add-mobile-opacity, 0);
+    opacity: 0;
+    transform: translateY(8px);
     overflow: hidden;
     color: var(--quick-add-foreground, var(--color-foreground));
     pointer-events: all;
     position: absolute;
-    inset-inline-end: var(--quick-add-inset-inline-end);
-    inset-block-end: var(--quick-add-inset-block-end);
-    max-inline-size: calc(100% - var(--quick-add-inset-inline-end));
-    min-inline-size: 0;
-    white-space: nowrap;
-    backdrop-filter: blur(20px) saturate(180%);
-    interpolate-size: allow-keywords;
+    left: 12px;
+    bottom: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
 
-    &:hover {
-      scale: 1.03;
-
-      /* Hover stabilizer: extends hit area to maintain hover state */
-      &::before {
-        content: '';
-        position: absolute;
-        inset: -10px;
-        z-index: -1;
-      }
+  @media screen and (max-width: 749px) {
+    button.quick-add__button {
+      opacity: 1;
+      transform: translateY(0);
+      border-radius: 50%;
+      width: 42px;
+      height: 42px;
     }
+  }
 
-    &:active {
-      scale: 0.99;
-    }
-
-    .quick-add[stay-visible] & {
-      display: flex;
-    }
-
-    @media screen and (min-width: 750px) {
-      display: var(--quick-add-display, flex);
-      opacity: 0;
+  @media screen and (min-width: 750px) {
+    button.quick-add__button:hover {
+      width: auto;
+      padding: 0 16px 0 12px;
+      border-radius: 24px;
+      background: rgba(255, 255, 255, 0.95);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+      transform: translateY(0) scale(1.02);
     }
   }
 
   .quick-add__button.add-to-cart-button {
-    height: var(--button-size-md);
+    height: 42px;
+    font-size: 0.875rem;
+    font-weight: 600;
   }
 
   .quick-add__button .svg-wrapper .checkmark-burst {
-    width: 22px;
-    height: 22px;
+    width: 20px;
+    height: 20px;
   }
 
   .quick-add__button > .add-to-cart-icon {
     flex-shrink: 0;
     width: var(--quick-add-icon-width);
     height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .quick-add__button > .add-to-cart-icon svg {
+    width: 20px;
+    height: 20px;
   }
 
   .quick-add__product-form-component {
@@ -131,9 +120,8 @@
 
   .quick-add__product-form-component .shopify-product-form {
     display: flex;
-    justify-content: flex-end;
-    align-items: flex-end;
-    container-type: inline-size;
+    justify-content: flex-start;
+    align-items: center;
     height: 100%;
   }
 
@@ -150,31 +138,30 @@
     --cursor: default;
   }
 
-  @media screen and (min-width: 750px) {
-    .quick-add__button:is(:hover, :focus-visible) {
-      width: var(--quick-add-expanded-width);
-      padding-inline-end: var(--padding-sm);
-    }
-  }
-
   .quick-add__button[data-added='true'] {
-    width: var(--quick-add-collapsed-width);
-    color: transparent;
+    width: 42px;
+    padding: 0;
+    border-radius: 50%;
   }
 
-  .quick-add__button[data-added='true'] > .add-to-cart-icon {
+  .quick-add__button[data-added='true'] > *:not(.add-to-cart__added) {
     opacity: 0;
   }
 
   .quick-add__button[data-added='true'] .add-to-cart__added {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     color: var(--quick-add-foreground, var(--color-foreground));
   }
 
   @media (prefers-reduced-motion: no-preference) {
     button.quick-add__button {
-      transition-property: scale, translate, opacity, width;
-      transition-duration: var(--animation-speed);
-      transition-timing-function: var(--ease-out-cubic);
+      transition-property: all;
+      transition-duration: 0.3s;
+      transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
     }
   }
 {% endstylesheet %}

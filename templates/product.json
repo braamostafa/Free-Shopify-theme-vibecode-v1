@@ -6,7 +6,8 @@
  * or related systems. Please exercise caution as any changes
  * made to this file may be overwritten.
  * ------------------------------------------------------------
- */{
+ */
+{
   "sections": {
     "main": {
       "type": "product-information",
@@ -34,15 +35,16 @@
           "type": "_product-media-gallery",
           "static": true,
           "settings": {
-            "media_presentation": "grid",
-            "media_columns": "two",
-            "image_gap": 4,
+            "media_presentation": "carousel",
+            "media_columns": "one",
+            "image_gap": 0,
             "large_first_image": false,
-            "slideshow_controls_style": "counter",
-            "slideshow_mobile_controls_style": "dots",
-            "thumbnail_position": "right",
-            "thumbnail_width": 44,
-            "thumbnail_radius": 0,
+            "icons_style": "arrow",
+            "slideshow_controls_style": "thumbnails",
+            "slideshow_mobile_controls_style": "thumbnails",
+            "thumbnail_position": "bottom",
+            "thumbnail_width": 72,
+            "thumbnail_radius": 8,
             "aspect_ratio": "adapt",
             "constrain_to_viewport": true,
             "media_fit": "contain",
@@ -50,7 +52,7 @@
             "extend_media": false,
             "zoom": true,
             "video_loop": false,
-            "hide_variants": true,
+            "hide_variants": false,
             "padding-block-start": 0,
             "padding-block-end": 0,
             "padding-inline-start": 0,
@@ -116,6 +118,7 @@
                 "border_opacity": 100,
                 "border_color": "",
                 "border_radius": 0,
+                "link": "",
                 "open_in_new_tab": false,
                 "placeholder": "",
                 "padding-block-start": 0,
@@ -195,7 +198,7 @@
               "type": "variant-picker",
               "settings": {
                 "variant_style": "buttons",
-                "show_swatches": false,
+                "show_swatches": true,
                 "option_label_text_color": "",
                 "variant_style_class": "default",
                 "custom_variant_background": "{{ settings.color_palette.background }}",
@@ -324,6 +327,92 @@
         "padding-block-end": 0
       }
     },
+    "collapsible_rows": {
+      "type": "product-collapsible-rows",
+      "blocks": {
+        "row_1": {
+          "type": "row",
+          "name": "Collapsible row",
+          "settings": {
+            "enable": true,
+            "title": "Description",
+            "description_metafield": "<p>{{ product.metafields.custom.descriptor | metafield_tag }}</p>"
+          }
+        },
+        "row_2": {
+          "type": "row",
+          "name": "Collapsible row",
+          "settings": {
+            "enable": true,
+            "title": "Features",
+            "description_metafield": "{{ product.metafields.custom.test | metafield_tag }}"
+          }
+        }
+      },
+      "block_order": [
+        "row_1",
+        "row_2"
+      ],
+      "settings": {
+        "section_width": "page-width",
+        "open_first_row_by_default": true,
+        "padding-block-start": 48,
+        "padding-block-end": 0
+      }
+    },
+    "trust_usps_EJwXzU": {
+      "type": "trust-usps",
+      "blocks": {
+        "usp_Aif8j6": {
+          "type": "usp",
+          "settings": {
+            "icon": "truck",
+            "label": "Free Shipping",
+            "description": ""
+          }
+        },
+        "usp_jmdHfx": {
+          "type": "usp",
+          "settings": {
+            "icon": "lock",
+            "label": "Secure Checkout",
+            "description": ""
+          }
+        },
+        "usp_ai7CL9": {
+          "type": "usp",
+          "settings": {
+            "icon": "return",
+            "label": "Easy Returns",
+            "description": ""
+          }
+        },
+        "usp_6qFbDq": {
+          "type": "usp",
+          "settings": {
+            "icon": "chat_bubble",
+            "label": "24/7 Support",
+            "description": ""
+          }
+        }
+      },
+      "block_order": [
+        "usp_Aif8j6",
+        "usp_jmdHfx",
+        "usp_ai7CL9",
+        "usp_6qFbDq"
+      ],
+      "name": "Trust / USP Strip",
+      "settings": {
+        "title": "",
+        "subtitle": "",
+        "section_width": "page-width",
+        "background_color": "#f5f5f5",
+        "items_per_row": "4",
+        "padding_top": 20,
+        "padding_bottom": 20
+      }
+    },
     "product_recommendations_qggXJq": {
       "type": "product-recommendations",
       "blocks": {
@@ -448,7 +537,7 @@
       ],
       "name": "t:names.product_recommendations",
       "settings": {
-        "product": "{{ closest.product }}",
+        "product": "",
         "recommendation_type": "related",
         "layout_type": "grid",
         "carousel_on_mobile": false,
@@ -469,6 +558,8 @@
   },
   "order": [
     "main",
+    "collapsible_rows",
+    "trust_usps_EJwXzU",
     "product_recommendations_qggXJq"
   ]
 }

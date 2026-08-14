@@ -107,6 +107,25 @@
         class="product-information__media"
         data-testid="product-information-media"
       >
+        {%- liquid
+          assign product_collection = blank
+          if product.collections.size > 0
+            assign product_collection = product.collections.first
+          endif
+        -%}
+        {% if product_collection != blank %}
+          <nav class="product-breadcrumbs" aria-label="{{ 'accessibility.breadcrumb' | t }}">
+            <ol>
+              <li>
+                <a href="{{ routes.root_url }}">{{ 'breadcrumbs.home' | t }}</a>
+              </li>
+              <li>
+                <a href="{{ product_collection.url }}">{{ product_collection.title | escape }}</a>
+              </li>
+              <li aria-current="page">{{ product.title | escape }}</li>
+            </ol>
+          </nav>
+        {% endif %}
         {{ media_gallery }}
       </div>
     {% endcapture %}
@@ -126,6 +145,55 @@
 {% stylesheet %}
   .product-information {
     gap: var(--gap) 0;
+  }
+
+  .product-breadcrumbs {
+    margin-block-start: var(--padding-md);
+    padding-block-end: var(--padding-sm);
+    font-size: var(--font-size--xs);
+    line-height: 1.4;
+  }
+
+  @media screen and (max-width: 749px) {
+    .product-breadcrumbs {
+      padding-inline: var(--padding-md);
+    }
+  }
+
+  .product-breadcrumbs ol {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    column-gap: 0.5rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .product-breadcrumbs li {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .product-breadcrumbs li + li::before {
+    content: '/';
+    color: rgb(var(--color-foreground-rgb) / 0.35);
+  }
+
+  .product-breadcrumbs a {
+    color: rgb(var(--color-foreground-rgb) / 0.6);
+    text-decoration: none;
+    transition: color 0.2s ease;
+
+    &:hover {
+      color: var(--color-foreground);
+    }
+  }
+
+  .product-breadcrumbs [aria-current='page'] {
+    color: var(--color-foreground);
+    font-weight: var(--font-weight-semibold);
   }
 
   /* Base grid layout */

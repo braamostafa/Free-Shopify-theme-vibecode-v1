@@ -430,7 +430,7 @@
 
     {% if render_slideshow_arrows %}
       {% capture slideshow_arrows %}
-        {% render 'slideshow-arrows', class: 'mobile:hidden', icon_style: block_settings.icons_style %}
+        {% render 'slideshow-arrows', class: 'mobile:hidden', icon_style: block_settings.icons_style, icon_shape: 'circle' %}
       {% endcapture %}
     {% endif %}
 
@@ -1029,6 +1029,43 @@
     opacity: 1;
   }
 
+  /* أسهم السلايدر على صورة المنتج: سهم أسود على خلفية بيضاء دائرية */
+  .media-gallery--carousel slideshow-arrows .slideshow-control--shape-circle {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
+    padding: 0;
+    border-radius: 50%;
+    background-color: #ffffff;
+    color: #000000;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.18);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .media-gallery--carousel slideshow-arrows .slideshow-control--shape-circle:hover {
+    transform: scale(1.08);
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.24);
+  }
+
+  .media-gallery--carousel slideshow-arrows .slideshow-control--shape-circle .svg-wrapper,
+  .media-gallery--carousel slideshow-arrows .slideshow-control--shape-circle svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  /* Hover zoom: تكبير المنطقة اللي واقف عليها المؤشر وما حوليها */
+  @media (hover: hover) and (pointer: fine) {
+    .media-gallery--carousel slideshow-slide .product-media__image {
+      transition: transform 0.25s ease-out;
+      will-change: transform;
+    }
+
+    .media-gallery--carousel slideshow-slide[aria-hidden="false"] .product-media__image.is-hover-zoomed {
+      transform: scale(1.6);
+    }
+  }
+
   @media screen and (max-width: 749px) {
     slideshow-component:has(:not(.mobile\:hidden) :is(.slideshow-controls__dots, .slideshow-controls__counter))
       .shopify-model-viewer-ui__controls-area {
@@ -1049,3 +1086,36 @@
     content-visibility: visible;
   }
 {% endstylesheet %}
+
+<script>
+  (function () {
+    if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
+
+    function getActiveImage(slideshow) {
+      const slide = slideshow.querySelector('slideshow-slide[aria-hidden="false"]');
+      if (!slide || slide.querySelector('video, product-model')) return null;
+      return slide.querySelector('.product-media__image');
+    }
+
+    document.querySelectorAll('media-gallery slideshow-component').forEach((slideshow) => {
+      const scroller = slideshow.querySelector('slideshow-slides');
+      if (!scroller) return;
+
+      scroller.addEventListener('pointermove', (event) => {
+        const img = getActiveImage(slideshow);
+        if (!img) return;
+        const rect = img.getBoundingClientRect();
+        const x = ((event.clientX - rect.left) / rect.width) * 100;
+        const y = ((event.clientY - rect.top) / rect.height) * 100;
+        img.style.transformOrigin = x + '% ' + y + '%';
+        img.classList.add('is-hover-zoomed');
+      });
+
+      scroller.addEventListener('pointerleave', () => {
+        const img = getActiveImage(slideshow);
+        if (!img) return;
+        img.classList.remove('is-hover-zoomed');
+      });
+    });
+  })();
+</script>

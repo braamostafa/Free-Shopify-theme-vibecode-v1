@@ -13,6 +13,7 @@
 %}
 
 {% render 'collection-wrapper-styles' %}
+{% render 'product-card-shared-styles' %}
 
 <div
   class="section-background{% if section.settings.background_color != blank %} color-custom-{{ section.id }}{% endif %}"
@@ -23,6 +24,7 @@
   style="--padding-block-start: {{ section.settings.padding-block-start }}px; --padding-block-end: {{ section.settings.padding-block-end }}px;"
   section-id="{{ section.id }}"
   infinite-scroll="{{ section.settings.enable_infinite_scroll }}"
+  data-product-card-styles
 >
   {% render 'skip-to-content-link', href: '#ResultsList', text: 'accessibility.skip_to_results_list' %}
 
@@ -55,10 +57,18 @@
             data-product-id="{{ product.id }}"
             ref="cards[]"
           >
-            {% content_for 'block',
-              type: '_product-card',
-              id: 'product-card',
-              closest.product: product,
+            {%- liquid
+              assign first_card = false
+              unless card_assets_rendered
+                assign first_card = true
+                assign card_assets_rendered = true
+              endunless
+            -%}
+            {% render 'product-card-custom',
+              product: product,
+              card_block_id: 'search-card-' | append: product.id,
+              render_card_assets: first_card,
+              product_card_gap: 8,
               product_view_context: 'search'
             %}
           </li>

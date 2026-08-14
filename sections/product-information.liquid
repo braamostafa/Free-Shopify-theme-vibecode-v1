@@ -85,6 +85,51 @@
         else
           assign has_image = true
         endif
+
+        # Find the first option that actually has native swatch data
+        assign swatch_option = null
+        for option in product.options_with_values
+          assign option_swatch_count = option.values | map: 'swatch' | compact | size
+          if option_swatch_count > 0
+            assign swatch_option = option
+            break
+          endif
+        endfor
+
+        # Get the selected value's name and native swatch background (color or image)
+        assign selected_swatch_value = null
+        assign selected_swatch_name = null
+        if swatch_option != null
+          for value in swatch_option.values
+            if current_variant[swatch_option.name] == value.name
+              assign selected_swatch_name = value.name
+              if value.swatch.color and value.swatch.color.rgb != blank
+                assign selected_swatch_value = 'rgb(' | append: value.swatch.color.rgb | append: ')'
+              elsif value.swatch.image
+                assign selected_swatch_value = value.swatch.image | image_url: width: 64
+              endif
+              break
+            endif
+          endfor
+        endif
+
+        # Fallback name: show the selected variant title (e.g. "Black / M")
+        if selected_swatch_name == null and product.options.size > 0 and current_variant != blank
+          assign selected_swatch_name = current_variant.title
+        endif
+
+        # Other selected option values (e.g. size) appended next to the color name
+        assign selected_swatch_name_extra = ''
+        if swatch_option != null
+          for option in product.options_with_values
+            unless option.name == swatch_option.name
+              assign extra_value = current_variant[option.name]
+              if extra_value != blank
+                assign selected_swatch_name_extra = selected_swatch_name_extra | append: ' / ' | append: extra_value
+              endif
+            endunless
+          endfor
+        endif
       %}
       <div
         class="sticky-add-to-cart__info"
@@ -121,6 +166,63 @@
         {% render 'price', product_resource: product, show_sale_price_first: true %}
       </div>
 
+      {% if selected_swatch_name != null %}
+        <span class="sticky-add-to-cart__swatch-wrap">
+          {% if selected_swatch_value != null %}
+            <span
+              class="sticky-add-to-cart__swatch"
+              style="--swatch-background: {{ selected_swatch_value }};"
+              aria-hidden="true"
+            ></span>
+          {% endif %}
+          <span class="sticky-add-to-cart__swatch-name">{{ selected_swatch_name | escape }}{{ selected_swatch_name_extra }}</span>
+        </span>
+      {% endif %}
+
+      <div
+        class="sticky-add-to-cart__qty"
+        ref="quantityDisplay"
+        aria-label="{{ 'accessibility.quantity' | t }}"
+      >
+        <button
+          type="button"
+          class="sticky-add-to-cart__qty-btn button-unstyled"
+          name="minus"
+          on:click="/stickyDecreaseQuantity"
+          aria-label="{{ 'accessibility.decrease_quantity' | t }}"
+          {% unless current_variant.available %}
+            disabled
+          {% endunless %}
+        >
+          <span class="visually-hidden">{{ 'accessibility.decrease_quantity' | t }}</span>
+          <span class="svg-wrapper">
+            {{- 'icon-minus.svg' | inline_asset_content -}}
+          </span>
+        </button>
+        <span
+          class="sticky-add-to-cart__qty-value"
+          ref="quantityNumber"
+          aria-live="polite"
+        >
+          {{- initial_quantity -}}
+        </span>
+        <button
+          type="button"
+          class="sticky-add-to-cart__qty-btn button-unstyled"
+          name="plus"
+          on:click="/stickyIncreaseQuantity"
+          aria-label="{{ 'accessibility.increase_quantity' | t }}"
+          {% unless current_variant.available %}
+            disabled
+          {% endunless %}
+        >
+          <span class="visually-hidden">{{ 'accessibility.increase_quantity' | t }}</span>
+          <span class="svg-wrapper">
+            {{- 'icon-plus.svg' | inline_asset_content -}}
+          </span>
+        </button>
+      </div>
+
       <button
         type="button"
         class="sticky-add-to-cart__button add-to-cart-button button"
@@ -135,7 +237,7 @@
         >
           {% if current_variant.available %}
             <span class="svg-wrapper">
-              {{- 'icon-add-to-cart.svg' | inline_asset_content -}}
+              {{- 'icon-cart.svg' | inline_asset_content -}}
             </span>
           {% endif %}
           <span class="add-to-cart-text__content">
@@ -148,20 +250,9 @@
                 {{- 'products.product.sold_out' | t -}}
               {%- endif -%}
             </span>
-            <span
-              ref="quantityDisplay"
-              {% if current_variant.available and initial_quantity > 1 %}
-                style="display: inline;"
-              {% else %}
-                style="display: none;"
-              {% endif %}
-            >
-              {{- ' (' -}}
-              <span ref="quantityNumber">{{- initial_quantity -}}</span>
-              {{- ')' -}}
-            </span>
           </span>
         </span>
+        <span class="add-to-cart__spinner" aria-hidden="true"></span>
         <span class="add-to-cart__added">
           <span class="svg-wrapper add-to-cart__added-icon">
             {{- 'icon-checkmark-burst.svg' | inline_asset_content -}}
@@ -287,45 +378,206 @@
   }
 
   .sticky-add-to-cart__button {
-    height: var(--height-buy-buttons);
+    height: 36px;
     position: relative;
+    font-size: 0.8125rem;
+    padding-inline: var(--padding-md);
+  }
+
+  .sticky-add-to-cart__button.is-loading .add-to-cart-text,
+  .sticky-add-to-cart__button.is-loading .add-to-cart-icon {
+    display: inline-flex !important;
+    visibility: hidden;
+  }
+
+  .sticky-add-to-cart__button.is-loading .add-to-cart__spinner {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    translate: -50% -50%;
+  }
+
+  .sticky-add-to-cart__swatch-wrap {
+    display: none;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+
+  .sticky-add-to-cart__swatch {
+    display: block;
+    flex-shrink: 0;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: var(--swatch-background) center / cover no-repeat;
+    border: 1px solid rgb(var(--color-foreground-rgb) / 0.2);
+  }
+
+  .sticky-add-to-cart__swatch-name {
+    font-size: var(--font-paragraph--size);
+    color: rgb(var(--color-foreground-rgb) / var(--opacity-subdued-text));
+    white-space: nowrap;
+  }
+
+  .sticky-add-to-cart__qty {
+    display: flex;
+    align-items: center;
+    height: 32px;
+    padding: 0;
+    border: 1px solid #cccccc;
+    border-radius: 0;
+    flex-shrink: 0;
+  }
+
+  .sticky-add-to-cart__qty-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    border-radius: 0;
+    border: none !important;
+    background: transparent;
+    box-shadow: none !important;
+    color: inherit;
+    cursor: pointer;
+
+    &:hover {
+      background-color: #e8e8e8 !important;
+    }
+
+    &:disabled {
+      opacity: 0.4;
+      cursor: default;
+    }
+  }
+
+  .sticky-add-to-cart__qty-btn:first-child {
+    border-right: 1px solid #cccccc;
+  }
+
+  .sticky-add-to-cart__qty-btn:last-child {
+    border-left: 1px solid #cccccc;
+  }
+
+  .sticky-add-to-cart__qty-btn .svg-wrapper {
+    width: 12px;
+    height: 12px;
+  }
+
+  .sticky-add-to-cart__qty-btn .svg-wrapper > svg {
+    width: 12px;
+    height: 12px;
+  }
+
+  .sticky-add-to-cart__qty-value {
+    min-width: 24px;
+    padding-inline: 4px;
+    text-align: center;
+    font-weight: var(--font-weight-semibold);
+    font-size: var(--font-paragraph-medium--size);
+    line-height: 1;
+    border-left: 1px solid #cccccc;
+    border-right: 1px solid #cccccc;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .sticky-add-to-cart__qty-value:hover {
+    background-color: #e8e8e8;
   }
 
   /* Mobile adjustments */
   @media screen and (max-width: 749px) {
     .sticky-add-to-cart__bar {
-      bottom: 0;
+      bottom: calc(66px + env(safe-area-inset-bottom));
+      left: 0;
       width: 100%;
       max-width: none;
       border-radius: 0;
+      padding-block: 0;
+      padding-inline: 8px;
+      gap: 8px;
+      transform: translateY(calc(100% + 40px));
 
       &::before {
         --border: 1px;
       }
     }
 
+    .sticky-add-to-cart__bar[data-stuck='true'] {
+      transform: translateY(0%);
+    }
+
     .sticky-add-to-cart__bar .add-to-cart-text__content {
+      white-space: nowrap;
+    }
+
+    .sticky-add-to-cart__info,
+    .sticky-add-to-cart__price,
+    .sticky-add-to-cart__image {
       display: none;
     }
 
-    .sticky-add-to-cart__info[data-has-image='false'] {
-      padding-left: 0;
+    .sticky-add-to-cart__swatch-wrap {
+      display: flex;
+      min-width: 0;
+      flex-shrink: 1;
+      margin-inline-end: auto;
+      padding-inline: 4px 6px;
     }
 
-    .sticky-add-to-cart__title {
+    .sticky-add-to-cart__swatch-name {
+      min-width: 0;
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .sticky-add-to-cart__swatch {
+      width: 20px;
+      height: 20px;
+    }
+
+    .sticky-add-to-cart__qty {
+      flex: 0 0 auto;
+      justify-content: space-between;
+      min-width: 0;
+      height: 30px;
+      padding: 0;
+      border-radius: 0;
+      margin-inline-start: 0;
+      margin-inline-end: 8px;
+    }
+
+    .sticky-add-to-cart__qty-btn {
+      width: 28px;
+      height: 28px;
+    }
+
+    .sticky-add-to-cart__qty-btn .svg-wrapper,
+    .sticky-add-to-cart__qty-btn .svg-wrapper > svg {
+      width: 14px;
+      height: 14px;
+    }
+
+    .sticky-add-to-cart__qty-value {
+      min-width: 24px;
+      padding-inline: 6px;
       font-size: var(--font-paragraph--size);
     }
 
     .sticky-add-to-cart__button {
-      padding: var(--padding-lg);
-    }
-
-    .sticky-add-to-cart__price {
-      font-size: var(--font-paragraph-small--size);
-    }
-
-    .sticky-add-to-cart__button {
-      width: var(--height-buy-buttons);
+      flex: 0 0 auto;
+      width: auto;
+      height: 34px;
+      padding-inline: var(--padding-md);
+      font-size: 0.8125rem;
+      margin-inline-start: 0;
     }
 
     sticky-add-to-cart:not([data-variant-available='true']) .add-to-cart-text__content {

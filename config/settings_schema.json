@@ -2116,5 +2116,162 @@
         "default": "equal-width-buttons"
       }
     ]
+  },
+  {
+    "name": "Product Card",
+    "settings": [
+      {
+        "type": "paragraph",
+        "content": "These settings apply to the product card everywhere (homepage Products Tabs and product page \"You may also like\"). Change them once and both sections update."
+      },
+      {
+        "type": "color",
+        "id": "card_background",
+        "label": "Card background color",
+        "default": "#f3f3f5"
+      },
+      {
+        "type": "range",
+        "id": "card_radius",
+        "label": "Card border radius",
+        "min": 0,
+        "max": 40,
+        "step": 1,
+        "default": 10,
+        "unit": "px"
+      },
+      {
+        "type": "checkbox",
+        "id": "card_shadow",
+        "label": "Show card shadow",
+        "default": true
+      },
+      {
+        "type": "select",
+        "id": "card_image_ratio",
+        "label": "Product image ratio",
+        "options": [
+          {
+            "value": "1 / 1",
+            "label": "Square (1:1)"
+          },
+          {
+            "value": "4 / 5",
+            "label": "Portrait (4:5)"
+          },
+          {
+            "value": "3 / 4",
+            "label": "Portrait (3:4)"
+          },
+          {
+            "value": "3 / 2",
+            "label": "Landscape (3:2)"
+          }
+        ],
+        "default": "1 / 1"
+      },
+      {
+        "type": "header",
+        "content": "Discount Badge"
+      },
+      {
+        "type": "checkbox",
+        "id": "show_discount_badge",
+        "label": "Show discount badge",
+        "default": true
+      },
+      {
+        "type": "color",
+        "id": "badge_bg",
+        "label": "Discount badge background",
+        "default": "#fde9e4"
+      },
+      {
+        "type": "color",
+        "id": "badge_color",
+        "label": "Discount badge text color",
+        "default": "#dc2626"
+      },
+      {
+        "type": "range",
+        "id": "badge_font_size",
+        "label": "Discount badge font size",
+        "min": 10,
+        "max": 20,
+        "step": 1,
+        "default": 12,
+        "unit": "px"
+      },
+      {
+        "type": "range",
+        "id": "badge_radius",
+        "label": "Discount badge border radius",
+        "min": 0,
+        "max": 20,
+        "step": 1,
+        "default": 4,
+        "unit": "px"
+      },
+      {
+        "type": "header",
+        "content": "Card Buttons (Add to Cart / Wishlist)"
+      },
+      {
+        "type": "color",
+        "id": "actions_bg",
+        "label": "Buttons background",
+        "default": "#ffffff"
+      },
+      {
+        "type": "color",
+        "id": "actions_color",
+        "label": "Buttons icon color",
+        "default": "#000000"
+      },
+      {
+        "type": "range",
+        "id": "actions_size",
+        "label": "Add to cart button size",
+        "min": 32,
+        "max": 56,
+        "step": 2,
+        "default": 42,
+        "unit": "px"
+      },
+      {
+        "type": "range",
+        "id": "wishlist_size",
+        "label": "Wishlist button size",
+        "min": 28,
+        "max": 48,
+        "step": 2,
+        "default": 36,
+        "unit": "px"
+      },
+      {
+        "type": "header",
+        "content": "Typography"
+      },
+      {
+        "type": "range",
+        "id": "card_title_size",
+        "label": "Product title size",
+        "min": 12,
+        "max": 24,
+        "step": 1,
+        "default": 16,
+        "unit": "px"
+      },
+      {
+        "type": "range",
+        "id": "card_price_size",
+        "label": "Price size",
+        "min": 12,
+        "max": 28,
+        "step": 1,
+        "default": 16,
+        "unit": "px"
+      }
+    ]
   }
 ]

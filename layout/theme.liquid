@@ -6,6 +6,36 @@
   lang="{{ request.locale.iso_code }}"
 >
   <head>
+    <script>
+      // VibeWeb branding — the only console output on this site.
+      // Prints the branding message first, then silences everything else.
+      (function () {
+        var styles =
+          'background:#111;color:#ECE2CF;padding:6px 12px;border-radius:4px;font-weight:700;font-size:13px;font-family:system-ui,sans-serif;';
+        var facebookUrl = 'https://www.facebook.com/profile.php?id=61593002010778';
+        var brandedLog = function () {
+          console.log('%cDesigned & developed by VibeWeb', styles);
+          console.log('Facebook: ' + facebookUrl);
+        };
+
+        brandedLog();
+
+        var originalClear = console.clear.bind(console);
+        var noop = function () {};
+        ['log', 'info', 'warn', 'error', 'debug', 'trace', 'table', 'dir', 'dirxml', 'group', 'groupCollapsed', 'groupEnd', 'assert', 'count', 'countReset', 'time', 'timeEnd', 'timeLog', 'profile', 'profileEnd'].forEach(function (key) {
+          try { console[key] = noop; } catch (e) {}
+        });
+
+        // Keep the branding visible even if the console is cleared.
+        try {
+          console.clear = function () {
+            originalClear();
+            brandedLog();
+          };
+        } catch (e) {}
+      })();
+    </script>
+
     {%- if settings.favicon != blank -%}
       <link
         rel="icon"
@@ -41,6 +71,36 @@
     {%- render 'scripts' -%}
     {%- render 'theme-styles-variables' -%}
     {%- render 'color-palette' -%}
+
+    {% comment %}
+      Critical mobile-bottom-nav styles inlined in head so the fixed bar and
+      body bottom padding apply at first paint (prevents the late-appearance
+      layout shift). Keep in sync with the @media rules in
+      snippets/mobile-bottom-nav.liquid.
+    {% endcomment %}
+    {% style %}
+      @media screen and (max-width: 749px) {
+        body:has(mobile-bottom-nav) {
+          padding-block-end: calc(56px + env(safe-area-inset-bottom));
+        }
+      }
+    {% endstyle %}
+
+    {% comment %}
+      Brand override: keeps the primary/secondary button hover at the brand's
+      milky beige (لبني) instead of the auto-computed shift from theme settings.
+      Rendered after color-palette so it wins the cascade.
+    {% endcomment %}
+    {% style %}
+      :root {
+        --color-primary-button-hover-background: #ECE2CF;
+        --color-primary-button-hover-text: #000000;
+        --color-primary-button-hover-border: #ECE2CF;
+        --color-secondary-button-hover-background: #ECE2CF;
+        --color-secondary-button-hover-text: #000000;
+        --color-secondary-button-hover-border: #ECE2CF;
+      }
+    {% endstyle %}
 
     {% if request.design_mode %}
       {%- render 'theme-editor' -%}
@@ -144,6 +204,7 @@
     </div>
 
     {% render 'cart-drawer', render_wrapper: true %}
+    {% render 'wishlist-drawer' %}
     {% render 'theme-drawer' %}
 
     {% render 'search-modal' %}
@@ -151,5 +212,7 @@
     {% if settings.quick_add or settings.mobile_quick_add %}
       {% render 'quick-add-modal' %}
     {% endif %}
+
+    {% render 'mobile-bottom-nav' %}
   </body>
 </html>

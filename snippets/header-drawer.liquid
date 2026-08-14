@@ -70,27 +70,20 @@
         {{- 'icon-close.svg' | inline_asset_content -}}
       </span>
     </summary>
-    <div
-      ref="menuDrawer"
-      class="
-        menu-drawer
-        {% if block_settings.background_color != blank or block_settings.text_color != blank %}
-          color-custom-{{ block.id }}
-        {% endif %}
-      "
-    >
-      <button
-        class="button close-button menu-drawer__close-button focus-inset"
-        type="button"
-        aria-label="{{ 'actions.close' | t }}"
-        on:click="/close"
+      <div
+        ref="menuDrawer"
+        class="
+          menu-drawer
+          {% if block_settings.background_color != blank or block_settings.text_color != blank %}
+            color-custom-{{ block.id }}
+          {% endif %}
+        "
       >
-        <span class="svg-wrapper header-drawer-icon header-drawer-icon--close">
-          {{- 'icon-close.svg' | inline_asset_content -}}
-        </span>
-      </button>
-      <nav
-        class="menu-drawer__navigation"
+        <div class="menu-drawer__header">
+          <span class="menu-drawer__title">{{ 'accessibility.menu' | t }}</span>
+        </div>
+        <nav
+          class="menu-drawer__navigation"
         style="
           {%- render 'menu-font-styles', settings: block_settings, menu_type: 'drawer' %}
           {%- render 'submenu-font-styles', settings: block_settings %}
@@ -596,174 +589,70 @@
         %}
         {% if data_header_drawer_type == 'mobile-drawer' and show_country or show_language %}
           {% liquid
-            assign background_brightness = block_settings.background_color | color_brightness
-            if background_brightness < 64
-              assign flag_shadow_size = 4
-            else
-              assign flag_shadow_size = 2
-            endif
-
             assign localization_font = '--menu-localization-font: var(--font-[localization_font]--family); ' | replace: '[localization_font]', section.settings.localization_font
             assign color_shadow = '--color-shadow: rgb(var(--color-foreground-rgb) / var(--opacity-10-25));'
             assign form_style = localization_font | append: color_shadow
           %}
-          {% if show_language and show_country == false %}
-            <div class="menu-drawer__localization color-custom-popover">
-              {% render 'localization-form',
-                show_country: show_country,
-                show_language: show_language,
-                localization_style: 'drawer',
-                form_style: form_style,
-                form_id: block.id
-              %}
-            </div>
-          {% else %}
-            <drawer-localization-component class="menu-drawer__localization">
-              <details
-                id="drawer-localization"
-                class="drawer-localization"
-                on:toggle="/toggle"
-              >
-                <summary
-                  id="HeaderDrawer-localization"
-                  class="drawer-localization__button h3 focus-inset"
-                  aria-expanded="false"
-                  on:click="header-drawer/open/submenu"
-                  style="{{ form_style }}"
-                >
-                  <div class="drawer-localization__button--label h6">
-                    {%- if show_country -%}
-                      <div class="mobile-localization mobile-localization--country">
-                        {%- if section.settings.country_selector_style == true -%}
-                          <span
-                            class="icon-flag"
-                            style="
-                              background-image: url({{- localization.country | image_url: width: 32 }});
-                              --size-shadow: {{ flag_shadow_size }}px;
-                              --color-shadow: rgb(var(--color-foreground-rgb) / var(--opacity-30-60));
-                            "
-                          ></span>
-                        {%- endif -%}
-                        <span class="currency-code">
-                          {{- localization.country.currency.iso_code -}}
-                        </span>
-                      </div>
-                    {%- endif -%}
-
-                    {%- if show_country and show_language -%}
-                      <span>/</span>
-                    {%- endif -%}
-
-                    {%- if show_language -%}
-                      <div class="mobile-localization mobile-localization--country">
-                        <span>
-                          {{ localization.language.iso_code | upcase }}
-                        </span>
-                      </div>
-                    {%- endif -%}
-                  </div>
-                  <span class="svg-wrapper icon-caret icon-caret--forward">
-                    {{- 'icon-caret.svg' | inline_asset_content -}}
+          <div class="menu-drawer__localization menu-drawer__localization--rows">
+            {% if show_language %}
+              <details class="drawer-localization-row">
+                <summary class="drawer-localization-row__summary focus-inset">
+                  <span class="drawer-localization-row__value">{{ localization.language.endonym_name | capitalize }}</span>
+                  <span class="drawer-localization-row__icon drawer-localization-row__icon--plus" aria-hidden="true">
+                    {{- 'icon-plus.svg' | inline_asset_content -}}
+                  </span>
+                  <span class="drawer-localization-row__icon drawer-localization-row__icon--minus" aria-hidden="true">
+                    {{- 'icon-minus.svg' | inline_asset_content -}}
                   </span>
                 </summary>
-
-                <div
-                  class="menu-drawer__submenu has-submenu color-custom-drawer"
-                >
-                  <div
-                    class="menu-drawer__nav-buttons"
-                    ref="navButtons"
-                  >
-                    <button
-                      class="button menu-drawer__back-button focus-inset"
-                      on:click="header-drawer/back"
-                    >
-                      <span class="svg-wrapper icon-caret icon-caret--backward">
-                        {{- 'icon-caret.svg' | inline_asset_content -}}
-                      </span>
-                      {{ 'content.localization_region_and_language' | t }}
-                    </button>
-                    <button
-                      class="button close-button menu-drawer__close-button focus-inset"
-                      type="button"
-                      aria-label="{{ 'actions.close' | t }}"
-                      on:click="header-drawer/close"
-                    >
-                      <span class="svg-wrapper header-drawer-icon header-drawer-icon--close">
-                        {{- 'icon-close.svg' | inline_asset_content -}}
-                      </span>
-                    </button>
-                  </div>
-
+                <div class="drawer-localization-row__content">
                   {% render 'localization-form',
-                    show_country: show_country,
-                    show_language: show_language,
+                    show_country: false,
+                    show_language: true,
                     localization_style: 'drawer',
                     form_style: form_style,
                     form_id: block.id
                   %}
                 </div>
               </details>
-            </drawer-localization-component>
-          {% endif %}
+            {% endif %}
+            {% if show_country %}
+              <details class="drawer-localization-row">
+                <summary class="drawer-localization-row__summary focus-inset">
+                  <span class="drawer-localization-row__value">{{ localization.country.currency.iso_code }}</span>
+                  <span class="drawer-localization-row__icon drawer-localization-row__icon--plus" aria-hidden="true">
+                    {{- 'icon-plus.svg' | inline_asset_content -}}
+                  </span>
+                  <span class="drawer-localization-row__icon drawer-localization-row__icon--minus" aria-hidden="true">
+                    {{- 'icon-minus.svg' | inline_asset_content -}}
+                  </span>
+                </summary>
+                <div class="drawer-localization-row__content">
+                  {% render 'localization-form',
+                    show_country: true,
+                    show_language: false,
+                    localization_style: 'drawer',
+                    form_style: form_style,
+                    form_id: block.id
+                  %}
+                </div>
+              </details>
+            {% endif %}
+          </div>
         {%- endif -%}
       </div>
 
-      {% liquid
-        if block_settings.menu_style == 'featured_collections'
-          assign top_level_featured_collections = linklist.links | where: 'type', 'collection_link'
-        endif
-
-        if eager_loading and block_settings.menu_style == 'featured_products'
-          for link in linklist.links
-            if link.type == 'collection_link'
-              assign collection_linklist = link
-              assign top_level_featured_products_collection = collection_linklist.object
-              break
-            elsif link.type == 'catalog_link' or link.type == 'collections_link'
-              assign top_level_featured_products_collection = collections.all
-              break
-            endif
-          endfor
-        endif
-      -%}
-      {% if top_level_featured_collections.size > 0 or top_level_featured_products_collection.products_count > 0 %}
-        <div
-          class="menu-drawer__featured-content"
-          style="--menu-drawer-animation-index: {{ linklist.links.size | plus: 1 }};"
-        >
-          <ul class="menu-drawer__featured-content-list menu-drawer__animated-element list-unstyled">
-            {% if top_level_featured_collections.size > 0 %}
-              {%- for collection in top_level_featured_collections limit: max_featured_items -%}
-                <li class="menu-drawer__featured-content-list-item menu-drawer__featured-content-list-item--collection">
-                  {% render 'resource-card',
-                    resource: collection.object,
-                    resource_type: 'collection',
-                    style: 'overlay',
-                    image_aspect_ratio: ratio,
-                    image_sizes: 'auto, 400px'
-                  %}
-                </li>
-              {%- endfor -%}
-            {% elsif top_level_featured_products_collection.products_count > 0 %}
-              {% paginate top_level_featured_products_collection.products by max_featured_items %}
-                {%- for product in top_level_featured_products_collection.products limit: max_featured_items -%}
-                  <li class="menu-drawer__featured-content-list-item menu-drawer__featured-content-list-item--product">
-                    {% render 'resource-card',
-                      resource: product,
-                      resource_type: 'product',
-                      image_aspect_ratio: ratio,
-                      image_sizes: 'auto, 400px',
-                      product_view_context: 'dialog'
-                    %}
-                  </li>
-                {%- endfor -%}
-              {% endpaginate %}
-            {% endif %}
-          </ul>
-        </div>
-      {% endif %}
     </div>
+    <button
+      class="button close-button menu-drawer__close-button menu-drawer__close-button--fixed focus-inset"
+      type="button"
+      aria-label="{{ 'actions.close' | t }}"
+      on:click="/close"
+    >
+      <span class="svg-wrapper header-drawer-icon header-drawer-icon--close">
+        {{- 'icon-close.svg' | inline_asset_content -}}
+      </span>
+    </button>
     <div
       class="menu-drawer__backdrop"
       on:click="header-drawer/close"
@@ -772,6 +661,12 @@
 </header-drawer>
 
 {% stylesheet %}
+  /* Menu button + icon */
+  .menu-drawer-container {
+    --drawer-animation-speed: 0.3s;
+    --drawer-slide-ease: cubic-bezier(0.32, 0.72, 0, 1);
+  }
+
   .header__icon--menu {
     position: initial;
   }
@@ -782,12 +677,39 @@
     justify-content: center;
     align-items: center;
     padding: var(--padding-lg);
+    transition: transform 0.2s var(--ease-out-cubic), color 0.2s ease;
+
+    @media (hover: hover) {
+      &:hover {
+        transform: scale(1.08);
+      }
+
+      &:active {
+        transform: scale(0.94);
+      }
+    }
   }
 
   .header__icon--summary .header-drawer-icon {
     margin: auto;
-    width: var(--icon-size-xs);
-    height: var(--icon-size-xs);
+    width: var(--icon-size-md);
+    height: var(--icon-size-md);
+  }
+
+  /* Hamburger → X icon swap animation */
+  details.menu-open .header__icon--menu .header-drawer-icon--close {
+    animation: menu-drawer-icon-in 0.25s var(--ease-out-cubic);
+  }
+
+  @keyframes menu-drawer-icon-in {
+    from {
+      opacity: 0;
+      transform: rotate(-90deg) scale(0.6);
+    }
+    to {
+      opacity: 1;
+      transform: rotate(0) scale(1);
+    }
   }
 
   .menu-drawer__featured-content {
@@ -885,7 +807,8 @@
     left: 0;
     width: 100vw;
     height: 100dvh;
-    backdrop-filter: brightness(0.75);
+    backdrop-filter: brightness(0.55) blur(2px);
+    -webkit-backdrop-filter: brightness(0.55) blur(2px);
     z-index: var(--layer-overlay);
     opacity: 0;
     transition: opacity var(--drawer-animation-speed) ease;
@@ -897,8 +820,8 @@
 
   .menu-drawer,
   details[open] > .menu-drawer__submenu {
-    transition: transform var(--drawer-animation-speed) ease, visibility var(--drawer-animation-speed) ease,
-      opacity var(--drawer-animation-speed) ease;
+    transition: transform var(--drawer-animation-speed) var(--drawer-slide-ease),
+      visibility var(--drawer-animation-speed) ease, opacity var(--drawer-animation-speed) ease;
   }
 
   .menu-open > .menu-drawer,
@@ -1022,8 +945,8 @@
   }
 
   .menu-drawer-container[open] .menu-drawer__animated-element {
-    animation: menu-drawer-nav-open var(--drawer-animation-speed) ease-in-out;
-    animation-delay: calc(var(--drawer-animation-speed) + (var(--menu-drawer-animation-index) - 1) * 0.1s);
+    animation: menu-drawer-nav-open var(--drawer-animation-speed) cubic-bezier(0.22, 1, 0.36, 1);
+    animation-delay: calc(var(--drawer-animation-speed) + (var(--menu-drawer-animation-index) - 1) * 0.06s);
     animation-fill-mode: backwards;
   }
 
@@ -1161,13 +1084,93 @@
   }
 
   .menu-drawer__close-button {
+    --private-button-size: 36px;
+
     position: relative;
     right: auto;
     top: auto;
-    width: fit-content;
-    height: fit-content;
+    width: var(--private-button-size);
+    height: var(--private-button-size);
+    margin: 0;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    border: 1px solid var(--color-border);
+    background-color: var(--color-background);
     color: inherit;
-    padding: var(--padding-lg);
+    box-shadow: none;
+    flex-shrink: 0;
+    transition: background-color 0.2s ease, transform 0.25s var(--ease-out-cubic);
+
+    &:hover {
+      background-color: rgb(var(--color-foreground-rgb) / 0.06);
+      transform: rotate(90deg);
+    }
+  }
+
+  /* Floating close button: sits on the drawer's right edge (half on the drawer,
+     half outside), above the backdrop. Visible only while the drawer is open. */
+  .menu-drawer__close-button--fixed {
+    position: fixed;
+    top: calc(var(--padding-sm) + 4px);
+    left: min(var(--drawer-width), var(--drawer-max-width), 25rem);
+    translate: -50% 0;
+    z-index: calc(var(--layer-menu-drawer) + 2);
+    display: none;
+    border-radius: 0;
+    border: none;
+    background-color: #000000;
+    color: #ffffff;
+    box-shadow: 0 0 0 1px rgb(255 255 255 / 0.35), 0 2px 8px rgb(0 0 0 / 0.3);
+
+    .menu-open & {
+      display: flex;
+      animation: menu-drawer-icon-in 0.25s var(--ease-out-cubic);
+    }
+
+    &:hover {
+      background-color: #333333;
+      transform: rotate(90deg);
+    }
+  }
+
+  .menu-drawer__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--gap-md);
+    padding: var(--padding-sm) var(--drawer-padding);
+    border-block-end: 1px solid var(--color-border);
+    background-color: var(--color-background);
+    position: sticky;
+    top: 0;
+    z-index: var(--layer-flat);
+    flex-shrink: 0;
+  }
+
+  .menu-drawer__title {
+    font-family: var(--font-heading--family);
+    font-size: 1.125rem;
+    font-weight: var(--font-heading--weight);
+    letter-spacing: -0.01em;
+    line-height: 1.2;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .menu-drawer__logo {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+  }
+
+  .menu-drawer__logo-image {
+    max-height: 32px;
+    width: auto;
+    object-fit: contain;
   }
 
   .menu-drawer__back-button {
@@ -1285,13 +1288,17 @@
     0% {
       visibility: hidden;
       opacity: 0;
-      transform: translateX(-0.5rem);
+      transform: translateY(14px);
+    }
+
+    60% {
+      transform: translateY(-3px);
     }
 
     100% {
       visibility: visible;
       opacity: 1;
-      transform: translateX(0);
+      transform: translateY(0);
     }
   }
 
@@ -1309,116 +1316,151 @@
     }
   }
 
-  /* Drawer Localization Styles */
-  .drawer-localization__button .icon-flag {
-    width: var(--menu-localization-font-size, var(--icon-size-sm));
-    height: var(--menu-localization-font-size, var(--icon-size-sm));
-    clip-path: circle(50%); /* stylelint-disable-line */
-    background-position: center;
-    background-size: cover;
-    margin-inline-end: 4px;
-    position: relative;
-  }
-
-  .drawer-localization__button .icon-flag::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    box-shadow: inset 0 0 var(--size-shadow) var(--color-shadow);
-    border-radius: 50%;
-  }
-
-  .drawer-localization .country-filter {
-    padding-block: 8px;
-  }
-
-  .drawer-localization .drawer-localization__button {
+  /* Drawer localization rows: language & currency collapsibles */
+  .menu-drawer__localization--rows {
     display: flex;
-    padding: 0;
-    position: relative;
-    text-decoration: none;
-    height: 44px;
+    flex-direction: column;
+    width: 100%;
+    margin-inline: calc(-1 * var(--padding-xl)) 0;
+  }
+
+  .drawer-localization-row {
+    width: 100%;
+  }
+
+  .drawer-localization-row + .drawer-localization-row {
+    border-block-start: 1px solid rgb(var(--color-foreground-rgb) / 0.15);
+  }
+
+  .drawer-localization-row__summary {
+    display: flex;
+    align-items: center;
+    gap: var(--gap-xs);
+    margin-inline: calc(var(--drawer-padding) * -1);
+    padding: var(--padding-md) var(--drawer-padding);
+    font-family: var(--font-body--family);
+    font-size: var(--menu-font-md--size);
+    font-weight: 400;
+    color: var(--color-foreground);
+    list-style: none;
+    cursor: pointer;
+    text-transform: none;
+    transition: background-color 0.2s ease;
+
+    &::-webkit-details-marker {
+      display: none;
+    }
 
     &:hover {
-      color: var(--color-foreground);
+      background-color: rgb(var(--color-foreground-rgb) / 0.06);
     }
   }
 
-  .drawer-localization .drawer-localization__button .icon-caret {
-    width: fit-content;
-    height: fit-content;
-    margin: 0;
-    padding: var(--padding-xl) var(--padding-xl) var(--padding-xl) var(--padding-xs);
+  .drawer-localization-row__icon {
+    display: flex;
+    flex-shrink: 0;
+    margin-inline-start: auto;
   }
 
-  .menu-drawer__localization:not(drawer-localization-component) .language-selector {
+  .drawer-localization-row__icon--minus {
+    display: none;
+  }
+
+  .drawer-localization-row[open] .drawer-localization-row__icon--plus {
+    display: none;
+  }
+
+  .drawer-localization-row[open] .drawer-localization-row__icon--minus {
+    display: flex;
+  }
+
+  .drawer-localization-row__content {
+    padding-block-end: var(--padding-md);
+  }
+
+  .drawer-localization-row__content .localization-form {
+    width: 100%;
+  }
+
+  .drawer-localization-row__content .localization-form__list {
+    padding-inline: var(--padding-lg);
+    padding-block-start: var(--padding-xs);
+  }
+
+  .menu-drawer .drawer-localization-row__content .language-selector {
+    width: 100%;
+    padding-inline: var(--drawer-padding);
     font-family: var(--menu-localization-font);
     font-size: var(--menu-localization-font-size);
   }
 
-  .menu-drawer__localization .language-selector.h5 {
-    padding-inline-start: 0;
+  /* Modern menu item display */
+  .menu-drawer__menu > .menu-drawer__list-item {
+    min-height: calc(2 * var(--padding-lg) + var(--icon-size-md));
   }
 
-  .drawer-localization {
-    display: contents;
-    color: var(--color-foreground);
+  .menu-drawer__menu-item--mainlist,
+  .menu-drawer__menu-item--parent {
+    padding-block: var(--padding-md);
   }
 
-  .drawer-localization localization-form-component {
-    position: relative;
-    height: 100%;
+  .menu-drawer__menu-item {
+    transition: padding-inline-start 0.2s var(--ease-out-cubic), color 0.2s ease;
   }
 
-  .drawer-localization .mobile-localization,
-  .drawer-localization .drawer-localization__button--label {
-    display: flex;
-    gap: var(--gap-xs);
-    margin-block: 0;
-    align-items: center;
+  .menu-drawer__menu-item--active .menu-drawer__menu-item-text {
+    text-decoration: underline;
+    text-underline-offset: 6px;
+    text-decoration-thickness: 2px;
+    text-decoration-color: var(--color-foreground);
   }
 
-  .drawer-localization__button--label.h6 {
-    font-family: var(--menu-localization-font);
+  .menu-drawer__menu-item--child {
+    padding-block: var(--padding-2xs);
   }
 
-  .drawer-localization img {
-    width: var(--icon-size-sm);
+  .menu-drawer__utility-links {
+    border-block-start: 1px solid var(--color-border);
+    padding-block-start: var(--padding-lg);
   }
 
-  .drawer-localization .localization-button__icon,
-  .drawer-localization .localization-button__icon svg {
-    width: var(--icon-size-xs);
-    height: var(--icon-size-xs);
+  /* ==== Custom: "Menu" title + lighter menu font + dividers + hover ==== */
+  .menu-drawer__title {
+    font-weight: 700;
   }
 
-  .drawer-localization summary.is-disabled {
-    pointer-events: none;
+  .menu-drawer .menu-drawer__menu-item--mainlist {
+    font-family: var(--font-body--family);
+    font-weight: 400;
+    font-size: var(--menu-font-md--size);
+    text-transform: none;
   }
 
-  .drawer-localization .localization-wrapper {
-    width: 100%;
+  .menu-drawer .menu-drawer__menu-item--parent,
+  .menu-drawer .menu-drawer__menu-item--child {
+    font-family: var(--font-body--family);
+    font-weight: 400;
   }
 
-  .drawer-localization .localization-form {
-    display: flex;
-    flex-direction: column;
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
+  .menu-drawer__menu > .menu-drawer__list-item--deep,
+  .menu-drawer__menu > .menu-drawer__list-item--flat,
+  .menu-drawer__menu--childlist > .menu-drawer__list-item,
+  .menu-drawer__menu--grandchildlist > .menu-drawer__list-item {
+    border-block-end: 1px solid rgb(var(--color-foreground-rgb) / 0.15);
   }
 
-  .drawer-localization .localization-form > * {
-    padding-inline: var(--padding-xl);
+  .menu-drawer__menu-item {
+    transition: padding-inline-start 0.2s var(--ease-out-cubic), color 0.2s ease,
+      background-color 0.2s ease;
   }
 
-  .drawer-localization .language-selector .svg-wrapper.icon-caret {
-    transform: translateY(-50%) rotate(0deg);
-    right: 20px;
+  .menu-drawer .menu-drawer__menu-item--mainlist,
+  .menu-drawer .menu-drawer__menu-item--parent {
+    margin-inline: calc(var(--drawer-padding) * -1);
+    padding-inline: var(--drawer-padding);
   }
 
-  .drawer-localization .language-selector .svg-wrapper.icon-caret svg {
-    transform: none;
+  .menu-drawer .menu-drawer__menu-item:hover {
+    background-color: rgb(var(--color-foreground-rgb) / 0.06);
   }
 {% endstylesheet %}

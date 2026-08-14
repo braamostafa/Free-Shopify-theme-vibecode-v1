@@ -13,6 +13,18 @@
       assign classes = 'resource-list__carousel'
   endcase
 
+  # الحد الأقصى للمنتجات المعروضة — مثبت عند 4 مهما كان الإعداد في المحرر
+  assign max_to_show = section.settings.max_products | at_most: 4
+
+  # المنتج الحالي (صفحة المنتج) هو الأساس لاختيار المقترحات واستبعاد نفسه
+  assign current_product_id = product.id | default: section.settings.product.id
+
+  # كروت توضيحية (placeholder) تظهر فقط داخل محرر الثيم، وليس في المتجر
+  assign show_placeholders = false
+  if section.settings.product == blank and request.design_mode
+    assign show_placeholders = true
+  endif
+
   capture styles
     echo '--column-count-mobile: ' | append: section.settings.mobile_columns | append: ';'
     echo '--resource-list-column-gap-desktop: ' | append: section.settings.columns_gap | append: 'px;'
@@ -33,16 +45,18 @@
 {% render 'product-badges-styles' %}
 {% render 'resource-list-styles' %}
 {% render 'product-recommendations-styles' %}
+{% render 'product-card-shared-styles' %}
 <product-recommendations
   id="product-recommendations-{{ section.id }}"
   class="product-recommendations"
-  data-url="{{ routes.product_recommendations_url }}?limit={{ section.settings.max_products }}"
+  data-url="{{ routes.product_recommendations_url }}?limit={{ max_to_show }}"
   data-section-id="{{ section.id }}"
-  data-product-id="{{ section.settings.product.id | default: product.id }}"
+  data-product-id="{{ current_product_id }}"
   data-intent="{{ section.settings.recommendation_type }}"
   data-testid="product-recommendations-section"
   data-recommendations-performed="{{ recommendations.performed }}"
   data-hydration-key="product-recommendations-{{ section.id }}"
+  data-product-card-styles
   {{ section.shopify_attributes }}
 >
   {% liquid
@@ -73,50 +87,100 @@
       {% content_for 'blocks' %}
     </div>
 
-    {%- if recommendations.performed or section.settings.product == blank -%}
+    {%- if recommendations.performed or request.design_mode -%}
       {% liquid
-        if section.settings.product == blank
-          assign products = null
-          # Onboarding mode: Show placeholder products
-          for i in (1..section.settings.max_products)
-            assign products = products | append: ', '
-            assign products = products | split: ','
-          endfor
-        elsif recommendations.performed and recommendations.products_count == 0
-          # No recommendations found, pull from catalog
-          if section.settings.recommendation_type == 'related'
-            assign products = collections.all.products | reject: 'id', section.settings.product.id
-          elsif section.settings.recommendation_type == 'complementary'
-            # Do not recommend the All collection as complementary products
-            assign products = null
-          endif
+        assign all_products = collections.all.products
+        assign all_products_count = all_products.size
+        assign picked = ''
+        assign picked_count = 0
+        assign display_count = 0
 
-        else
-          assign products = recommendations.products
+        if show_placeholders
+          # معاينة المحرر فقط: كروت توضيحية
+          assign display_count = max_to_show
+        elsif all_products_count > 0
+          # منتجات حقيقية فقط — عشوائية ومختلفة، باستثناء المنتج الحالي
+          assign pick_goal = max_to_show | plus: 1
+          assign seconds = 'now' | date: '%s'
+          assign seed = seconds | times: 1103515245 | plus: current_product_id | modulo: 2147483647
+          assign base = seed | modulo: all_products_count
+          assign step = seed | modulo: 23 | plus: 3
+
+          for i in (1..15)
+            assign index = step | times: i | plus: base | modulo: all_products_count
+            assign marker = '|' | append: index | append: '|'
+            unless picked contains marker
+              assign picked = picked | append: marker
+              assign picked_count = picked_count | plus: 1
+            endunless
+            if picked_count >= pick_goal
+              break
+            endif
+          endfor
+
+          # ملء أي خانة متبقية بالتسلسل لضمان فهارس مختلفة
+          for i in (1..15)
+            if picked_count >= pick_goal
+              break
+            endif
+            assign index = base | plus: i | modulo: all_products_count
+            assign marker = '|' | append: index | append: '|'
+            unless picked contains marker
+              assign picked = picked | append: marker
+              assign picked_count = picked_count | plus: 1
+            endunless
+          endfor
         endif
       %}
       {% capture list_items %}
-        {% for product in products limit: section.settings.max_products %}
-          <div class="resource-list__item">
-            {% content_for 'block',
-              type: '_product-card',
-              id: 'static-product-card',
-              closest.product: product,
-              product_view_context: 'recommendation'
-            %}
-          </div>
-          {% unless forloop.last %}
-            <!--@list/split-->
-          {% endunless %}
-        {% endfor %}
+        {% if show_placeholders %}
+          {% for i in (1..max_to_show) %}
+            <div class="resource-list__item">
+              {% content_for 'block',
+                type: '_product-card',
+                id: 'static-product-card',
+                closest.product: null,
+                product_view_context: 'recommendation'
+              %}
+            </div>
+            {% unless forloop.last %}
+              <!--@list/split-->
+            {% endunless %}
+          {% endfor %}
+        {% else %}
+          {% for product in all_products %}
+            {%- assign marker = '|' | append: forloop.index0 | append: '|' -%}
+            {% if picked contains marker and product.id != current_product_id %}
+              {%- assign card_block_id = 'recommendation-card-' | append: forloop.index -%}
+              {%- liquid
+                assign first_card = false
+                unless card_assets_rendered
+                  assign first_card = true
+                  assign card_assets_rendered = true
+                endunless
+              -%}
+              <div class="resource-list__item">
+                {% render 'product-card-custom',
+                  product: product,
+                  card_block_id: card_block_id,
+                  render_card_assets: first_card,
+                  product_card_gap: 8,
+                  product_view_context: 'recommendation'
+                %}
+              </div>
+              <!--@list/split-->
+              {%- assign display_count = display_count | plus: 1 -%}
+            {% endif %}
+          {% endfor %}
+        {% endif %}
       {% endcapture %}
 
       {% liquid
         # Create an array from the list items to be used in the carousel
-        assign slide_content = list_items | strip
+        assign slide_content = list_items | strip | remove_last: '<!--@list/split-->'
         assign slides = slide_content | split: '<!--@list/split-->'
 
-        if products != blank and products.size > 0
+        if display_count > 0
           assign has_recommendations = 'true'
         else
           assign has_recommendations = 'false'
@@ -146,7 +210,7 @@
             {% render 'resource-list-carousel',
               ref: 'resourceListCarousel',
               slides: slides,
-              slide_count: recommendations.products.size,
+              slide_count: display_count,
               settings: section.settings
             %}
         {% endcase %}
@@ -170,22 +234,11 @@
           {% render 'resource-list-carousel',
             ref: 'resourceListCarouselMobile',
             slides: slides,
-            slide_count: recommendations.products.size,
+            slide_count: display_count,
             settings: section.settings
           %}
         </div>
       {% endif %}
-    {%- else -%}
-      <div
-        class="resource-list resource-list--grid"
-      >
-        {% for i in (1..section.settings.columns) %}
-          <div
-            class="product-recommendations__skeleton-item"
-            aria-label="{{ 'accessibility.loading_product_recommendations' | t }}"
-          ></div>
-        {% endfor %}
-      </div>
     {%- endif -%}
   </div>
 </product-recommendations>
@@ -285,8 +338,8 @@
       "type": "range",
       "id": "max_products",
       "label": "t:settings.product_count",
-      "min": 3,
-      "max": 10,
+      "min": 1,
+      "max": 4,
       "step": 1,
       "default": 4
     },
@@ -295,7 +348,7 @@
       "id": "columns",
       "label": "t:settings.columns",
       "min": 1,
-      "max": 8,
+      "max": 4,
       "step": 1,
       "default": 4
     },
